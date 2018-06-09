@@ -17,8 +17,8 @@
             <file leaf-file-name="threebase_voidray.py" pinned="false" current-in-tab="true">
               <entry file="file://$PROJECT_DIR$/../python-sc2-master/examples/protoss/threebase_voidray.py">
                 <provider selected="true" editor-type-id="text-editor">
-                  <state relative-caret-position="548">
-                    <caret line="54" column="8" selection-start-line="54" selection-start-column="8" selection-end-line="56" selection-end-column="51" />
+                  <state relative-caret-position="646">
+                    <caret line="50" column="8" selection-start-line="50" selection-start-column="8" selection-end-line="52" selection-end-column="49" />
                     <folding>
                       <element signature="e#0#13#0" expanded="true" />
                     </folding>
@@ -33,14 +33,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="MainBehaviorTree.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="MainBehaviorTree.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/MainBehaviorTree.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="20" column="4" lean-forward="true" selection-start-line="20" selection-start-column="4" selection-end-line="20" selection-end-column="4" />
-              <folding>
-                <element signature="e#24#34#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="136">
+              <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
             </state>
           </provider>
         </entry>
@@ -57,11 +54,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="WorkerTreeExample.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="WorkerTreeExample.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Trees/WorkerTreeExample.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="32" column="8" selection-start-line="32" selection-start-column="8" selection-end-line="32" selection-end-column="8" />
+            <state relative-caret-position="646">
+              <caret line="46" column="35" selection-start-line="46" selection-start-column="35" selection-end-line="46" selection-end-column="35" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -72,8 +69,8 @@
       <file leaf-file-name="BuildingsTreeExample.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Trees/BuildingsTreeExample.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="36" column="58" lean-forward="true" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
+            <state relative-caret-position="130">
+              <caret line="36" column="89" lean-forward="true" selection-start-line="36" selection-start-column="11" selection-end-line="36" selection-end-column="89" />
               <folding>
                 <element signature="e#2#15#0" expanded="true" />
               </folding>
@@ -108,10 +105,10 @@
         <option value="$PROJECT_DIR$/../python-sc2-master/examples/protoss/cannon_rush.py" />
         <option value="$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/multiprocessing/process.py" />
         <option value="$PROJECT_DIR$/mainBot.py" />
-        <option value="$PROJECT_DIR$/Trees/BuildingsTreeExample.py" />
         <option value="$PROJECT_DIR$/BehaviourTree.py" />
-        <option value="$PROJECT_DIR$/Trees/WorkerTreeExample.py" />
         <option value="$PROJECT_DIR$/MainBehaviorTree.py" />
+        <option value="$PROJECT_DIR$/Trees/BuildingsTreeExample.py" />
+        <option value="$PROJECT_DIR$/Trees/WorkerTreeExample.py" />
       </list>
     </option>
   </component>
@@ -305,9 +302,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="26" column="10" selection-start-line="26" selection-start-column="10" selection-end-line="26" selection-end-column="10" />
-          <folding>
-            <element signature="e#24#34#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -355,9 +349,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="26" column="10" selection-start-line="26" selection-start-column="10" selection-end-line="26" selection-end-column="10" />
-          <folding>
-            <element signature="e#24#34#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -392,9 +383,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="204">
           <caret line="12" column="27" lean-forward="true" selection-start-line="12" selection-start-column="27" selection-end-line="12" selection-end-column="27" />
-          <folding>
-            <element signature="e#24#34#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -505,26 +493,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../python-sc2-master/examples/protoss/threebase_voidray.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="548">
-          <caret line="54" column="8" selection-start-line="54" selection-start-column="8" selection-end-line="56" selection-end-column="51" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Trees/BuildingsTreeExample.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="36" column="58" lean-forward="true" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
-          <folding>
-            <element signature="e#2#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/BehaviourTree.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -535,22 +503,39 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Trees/WorkerTreeExample.py">
+    <entry file="file://$PROJECT_DIR$/MainBehaviorTree.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="32" column="8" selection-start-line="32" selection-start-column="8" selection-end-line="32" selection-end-column="8" />
+        <state relative-caret-position="136">
+          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../python-sc2-master/examples/protoss/threebase_voidray.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="646">
+          <caret line="50" column="8" selection-start-line="50" selection-start-column="8" selection-end-line="52" selection-end-column="49" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/MainBehaviorTree.py">
+    <entry file="file://$PROJECT_DIR$/Trees/BuildingsTreeExample.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="20" column="4" lean-forward="true" selection-start-line="20" selection-start-column="4" selection-end-line="20" selection-end-column="4" />
+        <state relative-caret-position="130">
+          <caret line="36" column="89" lean-forward="true" selection-start-line="36" selection-start-column="11" selection-end-line="36" selection-end-column="89" />
           <folding>
-            <element signature="e#24#34#0" expanded="true" />
+            <element signature="e#2#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Trees/WorkerTreeExample.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="646">
+          <caret line="46" column="35" selection-start-line="46" selection-start-column="35" selection-end-line="46" selection-end-column="35" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>

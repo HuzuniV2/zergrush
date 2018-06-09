@@ -21,10 +21,10 @@ class Action():
 
     async def rush_enemy_base(self):
         """Gets all the workers to rush the enemy base"""
-        print("Gonna start rushing the base")
-        #for worker in self.instance.workers.idle:
-        for worker in self.instance.workers:
-            await self.instance.do(worker.attack(self.instance.enemy_start_locations[0]))
+        if self.instance.workers.amount == self.instance.units(UnitTypeId.NEXUS).amount*15:
+            #for worker in self.instance.workers.idle:
+            for worker in self.instance.workers:
+                await self.instance.do(worker.attack(self.instance.enemy_start_locations[0]))
         return True
 
     #not needed
@@ -44,8 +44,8 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
-    Atomic(action.gather_supplies)
-    #Atomic(action.rush_enemy_base)
+    Atomic(action.gather_supplies),
+    Atomic(action.rush_enemy_base)
 )
         #s1.run()
 

@@ -20,6 +20,7 @@ class Action():
     async def on_step(self,iteration):
         await self.expand()
         await self.buildPylons()
+        await self.buildProbe()
 
     async def expand(self):
         print("expand")
@@ -30,8 +31,15 @@ class Action():
                 await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
                 return True
         return False
+
+    async def buildProbs(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.workers.amount < self.instance.units(UnitTypeId.NEXUS).amount*15 and nexus.noqueue:
+            if self.instance.can_afford(UnitTypeId.PROBE):
+                await self.instance.do(nexus.train(UnitTypeId.PROBE))
+        return True
+
     async def buildPylons(self):
-        print ("Build pylons")
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if not self.instance.units(UnitTypeId.PYLON).exists and not self.instance.already_pending(UnitTypeId.PYLON):
             if self.instance.can_afford(UnitTypeId.PYLON):
@@ -47,7 +55,8 @@ def defAction(instance):
 
 s1 = Sequence(
     Atomic(action.expand),
-    Atomic(action.buildPylons)
+    Atomic(action.buildPylons),
+    Atomic(action.buildProbs)
 )
         #s1.run()
 
