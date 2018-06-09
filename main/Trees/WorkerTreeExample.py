@@ -44,8 +44,8 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
-    Atomic(action.gather_supplies),
-    Atomic(action.rush_enemy_base)
+    Atomic(action.gather_supplies)
+    #Atomic(action.rush_enemy_base)
 )
         #s1.run()
 

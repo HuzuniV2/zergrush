@@ -20,7 +20,8 @@ class Action():
     async def on_step(self,iteration):
         await self.boost()
         await self.buildPylons()
-        await self.buildProbe()
+        await self.buildMineralProbes()
+        await self.buildGasProbes()
 
     async def boost(self):
         print("Boost struct")
@@ -42,16 +43,26 @@ class Action():
                     return True
         return False
 
-    async def buildProbs(self):
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if self.instance.workers.amount < self.instance.units(UnitTypeId.NEXUS).amount*15 and nexus.noqueue:
-            if self.instance.can_afford(UnitTypeId.PROBE):
-                await self.instance.do(nexus.train(UnitTypeId.PROBE))
+    async def buildMineralProbes(self):
+        for nexus in self.instance.units(UnitTypeId.NEXUS):
+            if nexus.assigned_harvesters < nexus.ideal_harvesters:
+                if self.instance.can_afford(UnitTypeId.PROBE):
+                    await self.instance.do(nexus.train(UnitTypeId.PROBE))
+        return True
+
+    async def buildGasProbes(self):
+        for gas in self.instance.units(UnitTypeId.ASSIMILATOR):
+            if gas.assigned_harvesters < gas.ideal_harvesters:
+                if self.instance.can_afford(UnitTypeId.PROBE):
+                    await self.instance.do(nexus.train(UnitTypeId.PROBE))
         return True
 
     async def buildPylons(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if not self.instance.units(UnitTypeId.PYLON).exists and not self.instance.already_pending(UnitTypeId.PYLON):
+        #if not self.instance.units(UnitTypeId.PYLON).exists and not self.instance.already_pending(UnitTypeId.PYLON):
+            #if self.instance.can_afford(UnitTypeId.PYLON):
+                #await self.instance.build(UnitTypeId.PYLON, near=nexus)
+        if self.instance.supply_left <= 0:
             if self.instance.can_afford(UnitTypeId.PYLON):
                 await self.instance.build(UnitTypeId.PYLON, near=nexus)
         return True
@@ -66,7 +77,8 @@ def defAction(instance):
 s1 = Sequence(
     Atomic(action.boost),
     Atomic(action.buildPylons),
-    Atomic(action.buildProbs)
+    Atomic(action.buildMineralProbes),
+    Atomic(action.buildGasProbes)
 )
         #s1.run()
 
