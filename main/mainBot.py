@@ -31,6 +31,7 @@ class WorkerRushBotTree(sc2.BotAI):
             await self.chat_send("(glhf)")
         await MainBehaviorTree.startRunning(self)
 
+
         #self.mineral_contents
 
 #Example of what we would need to do before, not needed for our project

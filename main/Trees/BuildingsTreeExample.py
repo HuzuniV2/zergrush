@@ -17,11 +17,26 @@ class Action():
     def __init__(self,inst):
         self.instance = inst
 
+    async def on_step(self,iteration):
+        await self.expand()
+        await self.buildPylons()
+
     async def expand(self):
-        print ("called")
-        if not self.instance.units(PYLON).exists and not self.instance.already_pending(PYLON):
-            if self.instance.can_afford(PYLON):
-                await self.instance.build(PYLON, near=nexus)
+        print("expand")
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if not nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
+            abilities = await self.instance.get_available_abilities(nexus)
+            if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
+                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                return True
+        return False
+    async def buildPylons(self):
+        print ("Build pylons")
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if not self.instance.units(UnitTypeId.PYLON).exists and not self.instance.already_pending(UnitTypeId.PYLON):
+            if self.instance.can_afford(UnitTypeId.PYLON):
+                await self.instance.build(UnitTypeId.PYLON, near=nexus)
+        return True
 
 action = Action(None)
 
@@ -31,12 +46,12 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
-    Atomic(action.expand)
+    Atomic(action.expand),
+    Atomic(action.buildPylons)
 )
         #s1.run()
 
 async def runTree():
-    print ("called")
     global action
     if(not action is None):
         await s1.run()

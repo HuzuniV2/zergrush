@@ -75,7 +75,7 @@ class Sequence(Task):
     async def run(self):
         for c in self._children :
             n = await c.run()
-            if not n:
+            if n is False:
                 return False
         return True
 

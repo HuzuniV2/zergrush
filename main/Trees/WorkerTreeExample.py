@@ -29,11 +29,9 @@ class Action():
 
     #not needed
     async def gather_supplies(self):
-        """Gathers supplies """
-        if self.instance.minerals > 60:
-            return False
-        #for worker in self.instance.workers.idle: #better possibility
-        for worker in self.instance.workers:
+        """make idols Gathers supplies """
+        for worker in self.instance.workers.idle: #better possibility
+        #for worker in self.instance.workers:
             mf = self.instance.state.mineral_field.closest_to(worker)
             await self.instance.do(worker.gather(mf))
         return True
@@ -46,14 +44,13 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
-    UntilFail(Atomic(action.gather_supplies)),
-    Atomic(action.rush_enemy_base)
+    Atomic(action.gather_supplies)
+    #Atomic(action.rush_enemy_base)
 )
         #s1.run()
 
 async def runTree():
     global action
-    print ("called worker")
     if(not action is None):
         await s1.run()
     else:
