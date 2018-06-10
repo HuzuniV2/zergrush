@@ -1,0 +1,14 @@
+*/.idea/
+.idea/
+*.iml
+
+*.pyc
+__pycache__/
+*/__pycache__/
+venv/
+*/venv/
+
+.classpath
+workspace/
+
+
