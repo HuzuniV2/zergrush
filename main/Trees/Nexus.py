@@ -14,14 +14,15 @@ from BehaviourTree import  *
 #isntance represents the bot itself, so we can tell it to do stuff
 class Action():
     """A way of passing the variables"""
-    def __init__(self,inst):
+    def __init__(self, inst):
         self.instance = inst
 
-    async def on_step(self,iteration):
+    async def on_step(self, iteration):
         await self.boost()
         await self.buildPylons()
         await self.buildProbes()
         await self.buildAssimilator()
+        await self.buildGateway()
 
     async def boost(self):
         print("Boost struct")
@@ -54,7 +55,6 @@ class Action():
                     #await self.instance.do(nexus.train(UnitTypeId.PROBE))
         return True
 
-
     async def buildPylons(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.supply_left <= 0:
@@ -71,6 +71,18 @@ class Action():
                 await self.instance.do(builder.build(UnitTypeId.ASSIMILATOR, building_placement))
                 return True
 
+    async def buildGateway(self):
+        await self.build_structure(UnitTypeId.GATEWAY, 16, 1)
+
+    async def build_structure(self, unit_type, min_workers, desired_units):
+        if self.instance.workers.amount >= min_workers:
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            if len(self.instance.units(unit_type)) < desired_units and not self.instance.already_pending(unit_type):
+                if self.instance.can_afford(unit_type):
+                    await self.instance.build(unit_type, near=nexus)
+        return True
+
+
 action = Action(None)
 
 
@@ -81,6 +93,7 @@ def defAction(instance):
 s1 = Sequence(
     Atomic(action.boost),
     Atomic(action.buildPylons),
+    Atomic(action.buildGateway),
     Atomic(action.buildProbes),
     Atomic(action.buildAssimilator)
 )
