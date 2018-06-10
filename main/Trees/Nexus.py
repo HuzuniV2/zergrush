@@ -24,7 +24,25 @@ class Action:
         await self.buildProbes()
         await self.buildAssimilator()
         await self.buildGateway()
-        await self.buildExpantion()
+        await self.buildExpansion()
+
+    async def boost(self):
+        prioritize_nexus = self.instance.units(UnitTypeId.PROBE).amount < 15
+        for nexus in self.instance.units(UnitTypeId.NEXUS).ready:
+            if not nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
+                abilities = await self.instance.get_available_abilities(nexus)
+                if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
+                    if not prioritize_nexus:
+                        for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
+                            if not gate.noqueue:
+                                print("boost gateway")
+                                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, gate))
+                                return True
+                    if not nexus.noqueue:
+                        print("boost nexus")
+                        await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                        return True
+        return True
 
     async def has_crono_buff(self):
         """True if it has crono buff"""
@@ -50,7 +68,7 @@ class Action:
             gateways.append(gate)
         for gate in gateways:
             if not gate.noqueue:
-                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, gate))
                 return True
         return True
 
@@ -90,18 +108,13 @@ class Action:
                         await self.instance.do(builder.build(UnitTypeId.ASSIMILATOR, gaiser))
         return True
 
-
-    async def buildExpantion(self):
+    async def buildExpansion(self):
         if self.instance.units(UnitTypeId.NEXUS).amount < 2 and not self.instance.already_pending(UnitTypeId.NEXUS):
             if self.instance.units(UnitTypeId.ZEALOT).amount >= 2 and self.instance.can_afford(UnitTypeId.NEXUS):
                 #await self.instance.expand_now()
                 location = await self.instance.get_next_expansion()
                 await self.instance.build(UnitTypeId.NEXUS, near=location)
                 return True
-
-
-
-
 
     async def buildGateway(self):
         await self.build_structure(UnitTypeId.GATEWAY, 16, 1)
@@ -124,26 +137,26 @@ def defAction(instance):
 
 
 s1 = Sequence(
-    Selector(
-        Atomic(action.has_crono_buff), #we arleady have the boost
-        Conditional(action.exists_crono_buff,
-            #Atomic(action.otherwise)
-            Selector(
-                Conditional(action.should_boost,
-                    Atomic(action.do_chrono_boost)
-                ),
-                Atomic(action.otherwise)
-            )
-        )
-        #Atomic(action.boost) #bosts in case we don't arleady havethe boost
-        #Atomic(action.has_crono_buff)
-    ),
-    #Atomic(action.boost),
+    # Selector(
+    #     Atomic(action.has_crono_buff), #we arleady have the boost
+    #     Conditional(action.exists_crono_buff,
+    #         #Atomic(action.otherwise)
+    #         Selector(
+    #             Conditional(action.should_boost,
+    #                 Atomic(action.do_chrono_boost)
+    #             ),
+    #             Atomic(action.otherwise)
+    #         )
+    #     )
+    #     #Atomic(action.boost) #bosts in case we don't arleady havethe boost
+    #     #Atomic(action.has_crono_buff)
+    # ),
+    Atomic(action.boost),
     Atomic(action.buildPylons),
     Atomic(action.buildGateway),
     Atomic(action.buildProbes),
     Atomic(action.buildAssimilator),
-    Atomic(action.buildExpantion)
+    Atomic(action.buildExpansion)
 )
 
 
