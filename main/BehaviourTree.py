@@ -16,8 +16,7 @@ class Atomic():
 
     async def run(self):
         #print self.func.__name__
-        await self.func()
-
+        return await self.func()
 
 
 class Task(object):
@@ -36,13 +35,19 @@ class Task(object):
         pass
         #await None
 
+
 class Selector(Task):
     """   Selector Implementation   """
 
     async def run(self):
         for c in self._children:
-            n = c.run()
-            if n is True :
+            n = False
+            #if isinstance(c, (Conditional)):
+            #    n = c.run()
+            #else:
+            n = await c.run()
+            #print (c, " = ", n)
+            if n is True:
                 return True
         return False
 
@@ -101,7 +106,23 @@ class Decorator(Task):
         super(Decorator,self).__init__(self)
         self._child = child
 
+class Conditional(Decorator):
+    """ IF condition is true executes all the children
+        OtherWise returns True          """
 
+    def __init__(self, func,child):
+        super().__init__(child)
+        self.func = func
+        self.child = child
+
+    async def run(self):
+        # print self.func.__name__
+        bool = await self.func()
+        print(self.func())
+        if bool:
+            return await self.child.run()
+        return False
+        #return self.func()
 
 class Limit(Decorator):
     """ Counter Decorator Implementation

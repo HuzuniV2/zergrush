@@ -8,13 +8,13 @@ from sc2.player import Bot, Computer
 
 import BehaviourTree
 from BehaviourTree import  *
-
+import sharedInfo
 #from mainBot import state
 
 #isntance represents the bot itself, so we can tell it to do stuff
 class Action():
     """A way of passing the variables"""
-    def __init__(self, inst):
+    def __init__(self,inst):
         self.instance = inst
 
     async def on_step(self, iteration):
@@ -31,18 +31,54 @@ class Action():
         for gate in self.instance.units(UnitTypeId.GATEWAY):
             gateways.append(gate)
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if not nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
-            abilities = await self.instance.get_available_abilities(nexus)
-            if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
-                if self.instance.units(UnitTypeId.PROBE).amount < 15 and not nexus.noqueue :
+        #if not nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
+        abilities = await self.instance.get_available_abilities(nexus)
+        if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
+            if self.instance.units(UnitTypeId.PROBE).amount < 15 and not nexus.noqueue :
+                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                return True
+            elif any(not gate.noqueue for gate in gateways):
+                for gate in gateways:
+                    if not gate.noqueue :
+                        await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                        break
+                return True
+        return True
+
+    async def has_crono_buff(self):
+        """True if it has crono buff"""
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        bool = nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST)
+        return bool
+
+    async def exists_crono_buff(self):
+        """True if it has crono buff"""
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        abilities = await self.instance.get_available_abilities(nexus)
+        return AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities
+
+    async def should_boost(self):
+        """True if it has crono buff"""
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        return self.instance.units(UnitTypeId.PROBE).amount < 15 and not nexus.noqueue
+
+    async def otherwise(self):
+        gateways = []
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        for gate in self.instance.units(UnitTypeId.GATEWAY):
+            gateways.append(gate)
+        if any(not gate.noqueue for gate in gateways):
+            for gate in gateways:
+                if not gate.noqueue:
                     await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
-                    return True
-                elif any(not gate.noqueue for gate in gateways):
-                    for gate in gateways:
-                        if not gate.noqueue :
-                            await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
-                            break
-                    return True
+                    break
+        return True
+
+    async def do_chrono_boost(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.units(UnitTypeId.PROBE).amount < 15 and not nexus.noqueue:
+            await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+            return True
         return False
 
     async def buildProbes(self):
@@ -57,6 +93,7 @@ class Action():
         return True
 
     async def buildPylons(self):
+        print("Build pylons")
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.supply_left <= 0:
             if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
@@ -106,7 +143,21 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
-    Atomic(action.boost),
+    Selector(
+        Atomic(action.has_crono_buff), #we arleady have the boost
+        Conditional(action.exists_crono_buff,
+            #Atomic(action.otherwise)
+            Selector(
+                Conditional(action.should_boost,
+                    Atomic(action.do_chrono_boost)
+                ),
+                Atomic(action.otherwise)
+            )
+        )
+        #Atomic(action.boost) #bosts in case we don't arleady havethe boost
+        #Atomic(action.has_crono_buff)
+    ),
+    #Atomic(action.boost),
     Atomic(action.buildPylons),
     Atomic(action.buildGateway),
     Atomic(action.buildProbes),

@@ -14,7 +14,7 @@ import Trees.Nexus as nexus
 import Trees.Probes as probes
 
 from BehaviourTree import *
-
+import sharedInfo
 from multiprocessing import Process
 
 
@@ -29,6 +29,7 @@ s1 = Sequence(
 #We have to pass the variable here
 async def startRunning(self):
     #print ("Start running")
+    #sharedInfo.setState(self)
     worker.defAction(self)
     nexus.defAction(self)
     probes.defAction(self)
