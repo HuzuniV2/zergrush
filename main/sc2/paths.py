@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 BASEDIR = {
-    "Windows": "C:/Program Files (x86)/StarCraft II",
+    "Windows": "G:/Program Files (x86)/StarCraft2/StarCraft II",
     "Darwin": "/Applications/StarCraft II",
     "Linux": "~/StarCraftII"
 }
