@@ -23,6 +23,7 @@ class Action():
         await self.buildProbes()
         await self.buildAssimilator()
         await self.buildGateway()
+        await self.buildExpantion()
 
     async def boost(self):
         print("Boost struct")
@@ -63,13 +64,27 @@ class Action():
         return True
 
     async def buildAssimilator(self):
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if nexus.assigned_harvesters >= 16:
-            if self.instance.can_afford(UnitTypeId.ASSIMILATOR) and not self.instance.already_pending(UnitTypeId.ASSIMILATOR):
-                builder = self.instance.workers.random
-                building_placement = self.instance.state.vespene_geyser.closest_to(builder.position)
-                await self.instance.do(builder.build(UnitTypeId.ASSIMILATOR, building_placement))
+        for nexus in self.instance.units(UnitTypeId.NEXUS).ready:
+            gaisers = self.instance.state.vespene_geyser.closer_than(20.0, nexus)
+            for gaiser in gaisers:
+                if self.instance.can_afford(UnitTypeId.ASSIMILATOR) and not self.instance.already_pending(UnitTypeId.ASSIMILATOR):
+                    builder = self.instance.select_build_worker(gaiser.position)
+                    if not self.instance.units(UnitTypeId.ASSIMILATOR).closer_than(1.0, gaiser).exists:
+                        await self.instance.do(builder.build(UnitTypeId.ASSIMILATOR, gaiser))
+        return True
+
+
+    async def buildExpantion(self):
+        if self.instance.units(UnitTypeId.NEXUS).amount < 2 and not self.instance.already_pending(UnitTypeId.NEXUS):
+            if self.instance.units(UnitTypeId.ZEALOT).amount >= 4 and self.instance.can_afford(UnitTypeId.NEXUS):
+                await self.instance.expand_now()
+                #location = await self.instance.get_next_expansion()
+                #await self.instance.build(UnitTypeId.NEXUS, near=location)
                 return True
+
+
+
+
 
     async def buildGateway(self):
         await self.build_structure(UnitTypeId.GATEWAY, 16, 1)
@@ -95,7 +110,8 @@ s1 = Sequence(
     Atomic(action.buildPylons),
     Atomic(action.buildGateway),
     Atomic(action.buildProbes),
-    Atomic(action.buildAssimilator)
+    Atomic(action.buildAssimilator),
+    Atomic(action.buildExpantion)
 )
         #s1.run()
 
