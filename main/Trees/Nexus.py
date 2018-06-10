@@ -20,8 +20,8 @@ class Action():
     async def on_step(self,iteration):
         await self.boost()
         await self.buildPylons()
-        await self.buildMineralProbes()
-        await self.buildGasProbes()
+        await self.buildProbes()
+        await self.buildAssimilator()
 
     async def boost(self):
         print("Boost struct")
@@ -43,29 +43,33 @@ class Action():
                     return True
         return False
 
-    async def buildMineralProbes(self):
-        for nexus in self.instance.units(UnitTypeId.NEXUS):
-            if nexus.assigned_harvesters < nexus.ideal_harvesters:
-                if self.instance.can_afford(UnitTypeId.PROBE):
-                    await self.instance.do(nexus.train(UnitTypeId.PROBE))
+    async def buildProbes(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.can_afford(UnitTypeId.PROBE):
+            if nexus.assigned_harvesters < nexus.ideal_harvesters and nexus.noqueue:
+                await self.instance.do(nexus.train(UnitTypeId.PROBE))
+        #for nexus in self.instance.units(UnitTypeId.NEXUS):
+            #if nexus.assigned_harvesters < nexus.ideal_harvesters:
+                #if self.instance.can_afford(UnitTypeId.PROBE) and not self.instance.already_pending(UnitTypeId.PROBE):
+                    #await self.instance.do(nexus.train(UnitTypeId.PROBE))
         return True
 
-    async def buildGasProbes(self):
-        for gas in self.instance.units(UnitTypeId.ASSIMILATOR):
-            if gas.assigned_harvesters < gas.ideal_harvesters:
-                if self.instance.can_afford(UnitTypeId.PROBE):
-                    await self.instance.do(nexus.train(UnitTypeId.PROBE))
-        return True
 
     async def buildPylons(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        #if not self.instance.units(UnitTypeId.PYLON).exists and not self.instance.already_pending(UnitTypeId.PYLON):
-            #if self.instance.can_afford(UnitTypeId.PYLON):
-                #await self.instance.build(UnitTypeId.PYLON, near=nexus)
         if self.instance.supply_left <= 0:
-            if self.instance.can_afford(UnitTypeId.PYLON):
+            if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
                 await self.instance.build(UnitTypeId.PYLON, near=nexus)
         return True
+
+    async def buildAssimilator(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if nexus.assigned_harvesters >= 16:
+            if self.instance.can_afford(UnitTypeId.ASSIMILATOR) and not self.instance.already_pending(UnitTypeId.ASSIMILATOR):
+                builder = self.instance.workers.random
+                building_placement = self.instance.state.vespene_geyser.closest_to(builder.position)
+                await self.instance.do(builder.build(UnitTypeId.ASSIMILATOR, building_placement))
+                return True
 
 action = Action(None)
 
@@ -77,8 +81,8 @@ def defAction(instance):
 s1 = Sequence(
     Atomic(action.boost),
     Atomic(action.buildPylons),
-    Atomic(action.buildMineralProbes),
-    Atomic(action.buildGasProbes)
+    Atomic(action.buildProbes),
+    Atomic(action.buildAssimilator)
 )
         #s1.run()
 
