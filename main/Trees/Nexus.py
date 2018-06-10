@@ -1,4 +1,3 @@
-
 import random
 
 import sc2
@@ -84,10 +83,6 @@ class Action:
         if self.instance.can_afford(UnitTypeId.PROBE):
             if nexus.assigned_harvesters < nexus.ideal_harvesters and nexus.noqueue:
                 await self.instance.do(nexus.train(UnitTypeId.PROBE))
-        #for nexus in self.instance.units(UnitTypeId.NEXUS):
-            #if nexus.assigned_harvesters < nexus.ideal_harvesters:
-                #if self.instance.can_afford(UnitTypeId.PROBE) and not self.instance.already_pending(UnitTypeId.PROBE):
-                    #await self.instance.do(nexus.train(UnitTypeId.PROBE))
         return True
 
     async def buildPylons(self):
@@ -95,7 +90,8 @@ class Action:
         if self.instance.supply_left <= 0:
             if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
                 print("Build pylon")
-                await self.instance.build(UnitTypeId.PYLON, near=nexus)
+                await self.instance.build(UnitTypeId.PYLON,
+                                          near=nexus.position.towards(self.instance.game_info.map_center, distance=5))
         return True
 
     async def buildAssimilator(self):
