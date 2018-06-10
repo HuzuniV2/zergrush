@@ -11,6 +11,7 @@ import BehaviourTree
 import Trees.WorkerTreeExample as worker
 import Trees.BuildingsTreeExample as builder
 import Trees.Nexus as nexus
+import Trees.Probes as probes
 
 from BehaviourTree import *
 
@@ -20,7 +21,8 @@ from multiprocessing import Process
 #Add your tree here
 s1 = Sequence(
     Atomic(worker.runTree), #run worker tree -> is not running the next atomic
-    Atomic(nexus.runTree)
+    Atomic(nexus.runTree),
+    Atomic(probes.runTree)
 )
         #s1.run()
 
@@ -29,5 +31,6 @@ async def startRunning(self):
     #print ("Start running")
     worker.defAction(self)
     nexus.defAction(self)
+    probes.defAction(self)
     await s1.run()
 
