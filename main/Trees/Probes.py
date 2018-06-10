@@ -22,11 +22,12 @@ class Action():
         await self.gotoMField
 
     async def gotoGas(self):
-        for assimilator in self.instance.units(UnitTypeId.ASSIMILATOR):
-            if assimilator.assigned_harvesters < assimilator.ideal_harvesters:
-                worker = self.instance.workers.closer_than(20, assimilator)
-                if worker.exists:
-                    await self.instance.do(worker.random.gather(assimilator))
+        if self.instance.workers.amount >= 16:
+            for assimilator in self.instance.units(UnitTypeId.ASSIMILATOR):
+                if assimilator.assigned_harvesters < assimilator.ideal_harvesters:
+                    worker = self.instance.workers.closer_than(20, assimilator)
+                    if worker.exists:
+                        await self.instance.do(worker.random.gather(assimilator))
         return True
 
     async def gotoMField(self):

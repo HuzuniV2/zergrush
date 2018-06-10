@@ -76,10 +76,10 @@ class Action():
 
     async def buildExpantion(self):
         if self.instance.units(UnitTypeId.NEXUS).amount < 2 and not self.instance.already_pending(UnitTypeId.NEXUS):
-            if self.instance.units(UnitTypeId.ZEALOT).amount >= 4 and self.instance.can_afford(UnitTypeId.NEXUS):
-                await self.instance.expand_now()
-                #location = await self.instance.get_next_expansion()
-                #await self.instance.build(UnitTypeId.NEXUS, near=location)
+            if self.instance.units(UnitTypeId.ZEALOT).amount >= 2 and self.instance.can_afford(UnitTypeId.NEXUS):
+                #await self.instance.expand_now()
+                location = await self.instance.get_next_expansion()
+                await self.instance.build(UnitTypeId.NEXUS, near=location)
                 return True
 
 
