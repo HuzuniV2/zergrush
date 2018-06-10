@@ -102,27 +102,40 @@ class NonDeterministicSequence(Task):
 
 class Decorator(Task):
 
-    def __init__(self,child):
-        super(Decorator,self).__init__(self)
+    def __init__(self, child):
+        super(Decorator, self).__init__(self)
         self._child = child
 
-class Conditional(Decorator):
-    """ IF condition is true executes all the children
-        OtherWise returns True          """
 
-    def __init__(self, func,child):
+class OptionalConditional(Decorator):
+    """ IF condition is true executes all the children
+        Otherwise returns True """
+
+    def __init__(self, func, child):
         super().__init__(child)
         self.func = func
         self.child = child
 
     async def run(self):
-        # print self.func.__name__
-        bool = await self.func()
-        print(self.func())
-        if bool:
+        if await self.func():
+            return await self.child.run()
+        return True
+
+
+class Conditional(Decorator):
+    """ IF condition is true executes all the children
+        Otherwise returns False """
+
+    def __init__(self, func, child):
+        super().__init__(child)
+        self.func = func
+        self.child = child
+
+    async def run(self):
+        if await self.func():
             return await self.child.run()
         return False
-        #return self.func()
+
 
 class Limit(Decorator):
     """ Counter Decorator Implementation

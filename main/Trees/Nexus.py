@@ -11,10 +11,11 @@ from BehaviourTree import  *
 import sharedInfo
 #from mainBot import state
 
-#isntance represents the bot itself, so we can tell it to do stuff
-class Action():
+
+# instance represents the bot itself, so we can tell it to do stuff
+class Action:
     """A way of passing the variables"""
-    def __init__(self,inst):
+    def __init__(self, inst):
         self.instance = inst
 
     async def on_step(self, iteration):
@@ -24,26 +25,6 @@ class Action():
         await self.buildAssimilator()
         await self.buildGateway()
         await self.buildExpantion()
-
-    async def boost(self):
-        print("Boost struct")
-        gateways = []
-        for gate in self.instance.units(UnitTypeId.GATEWAY):
-            gateways.append(gate)
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        #if not nexus.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
-        abilities = await self.instance.get_available_abilities(nexus)
-        if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
-            if self.instance.units(UnitTypeId.PROBE).amount < 15 and not nexus.noqueue :
-                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
-                return True
-            elif any(not gate.noqueue for gate in gateways):
-                for gate in gateways:
-                    if not gate.noqueue :
-                        await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
-                        break
-                return True
-        return True
 
     async def has_crono_buff(self):
         """True if it has crono buff"""
@@ -67,11 +48,10 @@ class Action():
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         for gate in self.instance.units(UnitTypeId.GATEWAY):
             gateways.append(gate)
-        if any(not gate.noqueue for gate in gateways):
-            for gate in gateways:
-                if not gate.noqueue:
-                    await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
-                    break
+        for gate in gateways:
+            if not gate.noqueue:
+                await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
+                return True
         return True
 
     async def do_chrono_boost(self):
@@ -93,10 +73,10 @@ class Action():
         return True
 
     async def buildPylons(self):
-        print("Build pylons")
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.supply_left <= 0:
             if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
+                print("Build pylon")
                 await self.instance.build(UnitTypeId.PYLON, near=nexus)
         return True
 
@@ -142,6 +122,7 @@ def defAction(instance):
     global action
     action.instance = instance
 
+
 s1 = Sequence(
     Selector(
         Atomic(action.has_crono_buff), #we arleady have the boost
@@ -164,11 +145,11 @@ s1 = Sequence(
     Atomic(action.buildAssimilator),
     Atomic(action.buildExpantion)
 )
-        #s1.run()
+
 
 async def runTree():
     global action
-    if(not action is None):
+    if action is not None:
         await s1.run()
     else:
         return False
