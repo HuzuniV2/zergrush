@@ -96,9 +96,21 @@ class Action:
                 return True
         return False
 
-    async def rushEnemyBaseWithStalkers(self):
+    async def trainVR(self):
+        print("Train vr")
+        for gate in self.instance.units(UnitTypeId.STARGATE):
+            if self.instance.can_afford(UnitTypeId.VOIDRAY) and gate.noqueue:
+                await self.instance.do(gate.train(UnitTypeId.VOIDRAY))
+                return True
+        return False
+
+    async def rushEnemyBaseWithEverything(self):
         for stalker in self.instance.units(UnitTypeId.STALKER):
             await self.instance.do(stalker.attack(self.instance.enemy_start_locations[0]))
+        for zealot in self.instance.units(UnitTypeId.ZEALOT):
+            await self.instance.do(zealot.attack(self.instance.enemy_start_locations[0]))
+        for vr in self.instance.units(UnitTypeId.VOIDRAY):
+            await self.instance.do(vr.attack(self.instance.enemy_start_locations[0]))
         return True
 
     async def doNothing(self):
@@ -119,7 +131,7 @@ s1 = Selector(
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-                    Atomic(action.haveEnoughStalkers), #stop if we arleady have enough stalkers
+                    Conditional(action.haveEnoughStalkers,Atomic(action.rushEnemyBaseWithEverything)), #stop if we arleady have enough stalkers
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
                         Atomic(action.doNothing) #Save resources for later
