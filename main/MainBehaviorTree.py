@@ -26,7 +26,7 @@ s1 = Sequence(
     Atomic(nexus.runTree),
     Atomic(probes.runTree),
     Atomic(army.runTree),
-    Atomic(defense.runTree),
+   # Atomic(defense.runTree),
 )
 
 
@@ -38,5 +38,5 @@ async def startRunning(self):
     nexus.defAction(self)
     probes.defAction(self)
     army.defAction(self)
-    defense.defAction(self)
+    #defense.defAction(self)
     await s1.run()

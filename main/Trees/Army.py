@@ -7,7 +7,9 @@ from sc2.player import Bot, Computer
 
 import BehaviourTree
 from BehaviourTree import *
+import Trees.Defense as defense
 
+hasAttacked = False
 
 # instance represents the bot itself, so we can tell it to do stuff
 class Action:
@@ -35,6 +37,18 @@ class Action:
             return True
         return False
 
+    async def canAffordStarGate(self):
+        return self.instance.can_afford(UnitTypeId.STARGATE)
+
+    async def buildStarGate(self):
+        print ("Build StarGate")
+        if self.instance.can_afford(UnitTypeId.STARGATE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.STARGATE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
+            return True
+        return False
+
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 4
@@ -46,6 +60,9 @@ class Action:
 
     async def arleadyHaveAllGates(self):
         return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 4
+
+    async def arleadyHaveEnoughStarGate(self):
+        return self.instance.units(UnitTypeId.STARGATE).amount > 3
 
     async def buildSeveralGateways(self):
         if self.instance.units(UnitTypeId.GATEWAY).amount > 4:
@@ -104,7 +121,13 @@ class Action:
                 return True
         return False
 
+    async def hasAttackedBase(self):
+        print ("Has Attacked Base ", hasAttacked, "-----")
+        return hasAttacked
+
     async def rushEnemyBaseWithEverything(self):
+        global hasAttacked
+        hasAttacked = True
         for stalker in self.instance.units(UnitTypeId.STALKER):
             await self.instance.do(stalker.attack(self.instance.enemy_start_locations[0]))
         for zealot in self.instance.units(UnitTypeId.ZEALOT):
@@ -116,6 +139,10 @@ class Action:
     async def doNothing(self):
         return True
 
+    async def applyDefenseTree(self):
+        defense.defAction(self.instance)
+        await defense.runTree()
+
 
 action = Action(None)
 
@@ -126,12 +153,25 @@ def defAction(instance):
 
 
 #TREE
-s1 = Selector(
+s2 = Selector(
     Conditional(action.arleadyHaveCyberCore, #Do we arleady have one?
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-                    Conditional(action.haveEnoughStalkers,Atomic(action.rushEnemyBaseWithEverything)), #stop if we arleady have enough stalkers
+                    Conditional(action.hasAttackedBase,
+                        ConditionalElse(action.arleadyHaveEnoughStarGate,
+                            Atomic(action.trainVR),
+                            Atomic(action.buildStarGate)
+                        )
+                    ),
+                    Conditional(action.haveEnoughStalkers, #stop if we arleady have enough stalkers
+                        Sequence(
+                            Atomic(action.rushEnemyBaseWithEverything)
+                            #ConditionalElse(action.arleadyHaveEnoughStarGate,
+                            #                Atomic(action.trainVR),
+                            #                Atomic(action.buildStarGate))
+                        )
+                    ),
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
                         Atomic(action.doNothing) #Save resources for later
@@ -150,6 +190,15 @@ s1 = Selector(
     Atomic(action.trainZealots), #Train the zealots then
 )
 
+s1 = DoAllSequence(
+    Selector(
+        ConditionalElse(action.haveEnoughStalkers, #do we have to attack? TODO -> needs to be swithced with something a bit more complex
+            Atomic(action.rushEnemyBaseWithEverything), # TODO -> change for the attacker version MAYBE THE CONDITION AND THE ATTACK TREE SHOULD BE IN THE SAME PLACE
+            Atomic(action.applyDefenseTree)
+        ),
+        s2
+    )
+)
 
 async def runTree():
     global action
