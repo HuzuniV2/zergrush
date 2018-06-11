@@ -15,7 +15,7 @@ class Action:
 
     def __init__(self, inst):
         self.instance = inst
-
+        self.warpgate_started = False
     async def on_step(self, iteration):
         await self.trainZealots()
         await self.buildCyberneticsCore()
@@ -40,6 +40,70 @@ class Action:
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 4
         return False
 
+    async def arleadyHaveCyberCore(self):
+        return self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists and \
+               not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE)
+
+    async def arleadyHaveAllGates(self):
+        return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 4
+
+    async def buildSeveralGateways(self):
+        if self.instance.units(UnitTypeId.GATEWAY).amount > 4:
+            return False
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.can_afford(UnitTypeId.GATEWAY):
+            await self.instance.build(UnitTypeId.GATEWAY,
+                near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
+            return True
+        return False
+
+    async def doWarpGateResearch(self):
+        #abilities = await self.get_available_abilities(ccore)
+        if not self.instance.can_afford(AbilityId.RESEARCH_WARPGATE) and self.instance.warpgate_started:
+            return False
+        ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
+        await self.instance.do(ccore(UnitTypeId.RESEARCH_WARPGATE))
+        self.warpgate_started = True
+        return True
+
+    async def researchAirAmor(self):
+        #abilities = await self.get_available_abilities(ccore)
+        print ("Research started!!!!!!!!!")
+        if not self.instance.can_afford(AbilityId.RESEARCH_PROTOSSAIRARMOR):
+            return False
+        ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
+        await self.instance.do(ccore(AbilityId.RESEARCH_PROTOSSAIRARMOR))
+        return True
+    async def researchAirWeapon(self):
+        #abilities = await self.get_available_abilities(ccore)
+        if not self.instance.can_afford(AbilityId.RESEARCH_PROTOSSAIRWEAPONS):
+            return False
+        ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
+        await self.instance.do(ccore(AbilityId.RESEARCH_PROTOSSAIRWEAPONS))
+        return True
+
+    async def haveResourcesForStalker(self):
+        return self.instance.can_afford(UnitTypeId.STALKER)
+
+    async def haveEnoughStalkers(self):
+        return self.instance.units(UnitTypeId.STALKER).amount > 13
+
+    async def trainStalkers(self):
+        print ("Train Stalkers")
+        for gate in self.instance.units(UnitTypeId.GATEWAY):
+            if self.instance.can_afford(UnitTypeId.STALKER) and gate.noqueue:
+                await self.instance.do(gate.train(UnitTypeId.STALKER))
+                return True
+        return False
+
+    async def rushEnemyBaseWithStalkers(self):
+        for stalker in self.instance.units(UnitTypeId.STALKER):
+            await self.instance.do(stalker.attack(self.instance.enemy_start_locations[0]))
+        return True
+
+    async def doNothing(self):
+        return True
+
 
 action = Action(None)
 
@@ -49,10 +113,29 @@ def defAction(instance):
     action.instance = instance
 
 
+#TREE
 s1 = Selector(
-    Conditional(action.shouldBuildCyberneticsCore,
-                Atomic(action.buildCyberneticsCore)),
-    Atomic(action.trainZealots),
+    Conditional(action.arleadyHaveCyberCore, #Do we arleady have one?
+        Selector(
+            Conditional(action.arleadyHaveAllGates,
+                Selector(
+                    Atomic(action.haveEnoughStalkers), #stop if we arleady have enough stalkers
+                    ConditionalElse(action.haveResourcesForStalker,
+                        Atomic(action.trainStalkers), #Train stalkers
+                        Atomic(action.doNothing) #Save resources for later
+                    )
+                )
+            ),
+            Atomic(action.buildSeveralGateways)
+
+            #Atomic(action.researchAirAmor),
+            #Atomic(action.researchAirWeapon)
+            #Atomic(action.doWarpGateResearch)
+        ) #Build more gateways
+    ),
+    Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
+                Atomic(action.buildCyberneticsCore)), #Build one then
+    Atomic(action.trainZealots), #Train the zealots then
 )
 
 

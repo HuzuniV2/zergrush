@@ -85,6 +85,18 @@ class Sequence(Task):
                 return False
         return True
 
+class DoAllSequence(Task):
+    """   Does all the elements in the sequence
+    and if one of them fails returns False, otherwise returns True   """
+
+    async def run(self):
+        bool = True
+        for c in self._children :
+            n = await c.run()
+            if not n and bool:
+                bool = False
+        return bool
+
 class NonDeterministicSequence(Task):
     """   NonDeterministicSequence Implementation   """
 
@@ -121,6 +133,22 @@ class OptionalConditional(Decorator):
             return await self.child.run()
         return True
 
+
+class ConditionalElse(Task):
+    """ IF condition is true executes all the children
+        Otherwise returns True """
+
+    def __init__(self, func, child_true,child_false):
+        super().__init__(child_true,child_false)
+        self.func = func
+        self.child_true = child_true
+        self.child_false = child_false
+
+    async def run(self):
+        if await self.func():
+            return await self.child_true.run()
+        else:
+            return await self.child_false.run()
 
 class Conditional(Decorator):
     """ IF condition is true executes all the children
