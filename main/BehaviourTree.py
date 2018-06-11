@@ -16,8 +16,7 @@ class Atomic():
 
     async def run(self):
         #print self.func.__name__
-        await self.func()
-
+        return await self.func()
 
 
 class Task(object):
@@ -36,12 +35,19 @@ class Task(object):
         pass
         #await None
 
+
 class Selector(Task):
     """   Selector Implementation   """
 
-    def run(self):
+    async def run(self):
         for c in self._children:
-            if c.run() :
+            n = False
+            #if isinstance(c, (Conditional)):
+            #    n = c.run()
+            #else:
+            n = await c.run()
+            #print (c, " = ", n)
+            if n is True:
                 return True
         return False
 
@@ -79,25 +85,56 @@ class Sequence(Task):
                 return False
         return True
 
-
 class NonDeterministicSequence(Task):
     """   NonDeterministicSequence Implementation   """
 
     async def run(self):
-        shuffled = random.shuffle(self._children)
+        print ("Children: ",self._children)
+        shuffled = self._children
+        random.shuffle(shuffled)
+        print("Children Shuffled: ", shuffled)
         for c in shuffled :
             n = await c.run()
-            if not n:
+            if n is False:
                 return False
         return True
 
 
 class Decorator(Task):
 
-    def __init__(self,child):
-        super(Decorator,self).__init__(self)
+    def __init__(self, child):
+        super(Decorator, self).__init__(self)
         self._child = child
 
+
+class OptionalConditional(Decorator):
+    """ IF condition is true executes all the children
+        Otherwise returns True """
+
+    def __init__(self, func, child):
+        super().__init__(child)
+        self.func = func
+        self.child = child
+
+    async def run(self):
+        if await self.func():
+            return await self.child.run()
+        return True
+
+
+class Conditional(Decorator):
+    """ IF condition is true executes all the children
+        Otherwise returns False """
+
+    def __init__(self, func, child):
+        super().__init__(child)
+        self.func = func
+        self.child = child
+
+    async def run(self):
+        if await self.func():
+            return await self.child.run()
+        return False
 
 
 class Limit(Decorator):
@@ -108,10 +145,10 @@ class Limit(Decorator):
         self._runLimit = limit
 
 
-    def run(self):
+    async def run(self):
         if self._runLimit > 0:
             self._runLimit -= 1
-            return self._child.run()
+            return await self._child.run()
         return False
 
 class UntilFail(Decorator):
@@ -140,7 +177,8 @@ class Wait(Decorator):
     def run(self):
         time.sleep(self._duration)
         return self._child.run()
-#TODO -< still can't be used
+
+
 class Inverter(Decorator):
     """ Inverter implementation
     """
@@ -148,24 +186,9 @@ class Inverter(Decorator):
         super(Inverter,self).__init__(child)
 
 
-    def run(self):
-         return not self._child.run()
-
-#TODO -< still can't be used
-class Parallel(Task):
-
-    def run(self):
-        plist = []
-        for child in self._children:
-            plist.append(Process(target= child.run))
-        for p in plist:
-            p.start()
-        for p in plist:
-            p.join()
-
-    def doit(self,task):
-        task.run()
-        time.sleep(1.0)
+    async def run(self):
+        bool = await self._child.run()
+        return not bool
 
 
 
