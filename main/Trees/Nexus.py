@@ -34,11 +34,9 @@ class Action:
                     if not prioritize_nexus:
                         for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
                             if not gate.noqueue:
-                                print("boost gateway")
                                 await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, gate))
                                 return True
                     if not nexus.noqueue:
-                        print("boost nexus")
                         await self.instance.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, nexus))
                         return True
         return True
@@ -89,7 +87,6 @@ class Action:
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.supply_left <= 0:
             if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
-                print("Build pylon")
                 await self.instance.build(UnitTypeId.PYLON,
                                           near=nexus.position.towards(self.instance.game_info.map_center, distance=5))
         return True
