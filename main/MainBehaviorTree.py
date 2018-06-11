@@ -12,6 +12,7 @@ import Trees.WorkerTreeExample as worker
 import Trees.BuildingsTreeExample as builder
 import Trees.Nexus as nexus
 import Trees.Probes as probes
+import Trees.Army as army
 
 from BehaviourTree import *
 import sharedInfo
@@ -22,16 +23,17 @@ from multiprocessing import Process
 s1 = Sequence(
     Atomic(worker.runTree), #run worker tree -> is not running the next atomic
     Atomic(nexus.runTree),
-    Atomic(probes.runTree)
+    Atomic(probes.runTree),
+    Atomic(army.runTree),
 )
-        #s1.run()
 
-#We have to pass the variable here
+
+# We have to pass the variable here
 async def startRunning(self):
-    #print ("Start running")
-    #sharedInfo.setState(self)
+    # print ("Start running")
+    # sharedInfo.setState(self)
     worker.defAction(self)
     nexus.defAction(self)
     probes.defAction(self)
+    army.defAction(self)
     await s1.run()
-
