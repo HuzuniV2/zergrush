@@ -13,6 +13,7 @@ import Trees.BuildingsTreeExample as builder
 import Trees.Nexus as nexus
 import Trees.Probes as probes
 import Trees.Army as army
+import Trees.Defense as defense
 
 from BehaviourTree import *
 import sharedInfo
@@ -25,6 +26,7 @@ s1 = Sequence(
     Atomic(nexus.runTree),
     Atomic(probes.runTree),
     Atomic(army.runTree),
+    Atomic(defense.runTree),
 )
 
 
@@ -36,4 +38,5 @@ async def startRunning(self):
     nexus.defAction(self)
     probes.defAction(self)
     army.defAction(self)
+    defense.defAction(self)
     await s1.run()
