@@ -61,16 +61,16 @@ class Action:
     async def returnToBase(self):
         DEFENSE_RADIUS = 60
         defense_base_position = self.instance.start_location.towards(self.instance.game_info.map_center,
-                                                                     distance=DEFENSE_RADIUS - 20)
+                                                                     distance=DEFENSE_RADIUS - 30)
         for unit in [UnitTypeId.STALKER, UnitTypeId.ZEALOT, UnitTypeId.VOIDRAY]:
-            for u in list([u for u in self.instance.units(unit)
+            for u in list([u for u in self.instance.units(unit).idle
                            if u.position.distance_to(self.instance.start_location) > DEFENSE_RADIUS]):
                 await self.instance.do(u.move(defense_base_position))
         return True
 
     async def troopsExisting(self):
         for unit in [UnitTypeId.STALKER, UnitTypeId.ZEALOT, UnitTypeId.VOIDRAY]:
-            if len(self.instance.units(unit)) > 0:
+            if len(self.instance.units(unit).idle) > 0:
                 return True
         return False
 
