@@ -16,13 +16,12 @@ class Action:
     def __init__(self, inst):
         self.instance = inst
         self.warpgate_started = False
-    async def on_step(self, iteration):
-        await self.trainZealots()
-        await self.buildCyberneticsCore()
 
     async def trainZealots(self):
+        if not self.instance.can_afford(UnitTypeId.ZEALOT):
+            return False
         for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
-            if self.instance.can_afford(UnitTypeId.ZEALOT) and gate.noqueue:
+            if gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.ZEALOT))
                 return True
         return False
@@ -40,6 +39,15 @@ class Action:
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 4
         return False
 
+    async def shouldTrainZealots(self):
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 4 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
+        # TODO: check for cybernetics core and gateways, then train 3 more
+        # if self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists:
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 7 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
+        return False
+
     async def arleadyHaveCyberCore(self):
         return self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists and \
                not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE)
@@ -47,13 +55,11 @@ class Action:
     async def arleadyHaveAllGates(self):
         return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 4
 
-    async def buildSeveralGateways(self):
-        if self.instance.units(UnitTypeId.GATEWAY).amount > 4:
-            return False
+    async def buildGateway(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.can_afford(UnitTypeId.GATEWAY):
             await self.instance.build(UnitTypeId.GATEWAY,
-                near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
             return True
         return False
 
@@ -74,6 +80,7 @@ class Action:
         ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
         await self.instance.do(ccore(AbilityId.RESEARCH_PROTOSSAIRARMOR))
         return True
+
     async def researchAirWeapon(self):
         #abilities = await self.get_available_abilities(ccore)
         if not self.instance.can_afford(AbilityId.RESEARCH_PROTOSSAIRWEAPONS):
@@ -138,7 +145,7 @@ s1 = Selector(
                     )
                 )
             ),
-            Atomic(action.buildSeveralGateways)
+            Atomic(action.buildGateway)
 
             #Atomic(action.researchAirAmor),
             #Atomic(action.researchAirWeapon)
@@ -147,7 +154,8 @@ s1 = Selector(
     ),
     Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
                 Atomic(action.buildCyberneticsCore)), #Build one then
-    Atomic(action.trainZealots), #Train the zealots then
+    Conditional(action.shouldTrainZealots,
+                Atomic(action.trainZealots)),
 )
 
 
