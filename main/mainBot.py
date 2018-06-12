@@ -54,7 +54,7 @@ class OriginalWorkerRushBot(sc2.BotAI):
 def main():
     run_game(maps.get("Abyssal Reef LE"), [
         Bot(Race.Protoss, WorkerRushBotTree()),
-        Computer(Race.Zerg, Difficulty.Medium)
+        Computer(Race.Zerg, Difficulty.Hard)
     ], realtime=True)
     #MainBehaviorTree.startRunning(1)
 
