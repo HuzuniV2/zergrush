@@ -21,12 +21,31 @@ class Action:
     async def on_step(self, iteration):
         await self.trainZealots()
         await self.buildCyberneticsCore()
+        await self.buildForge()
 
     async def trainZealots(self):
         for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
             if self.instance.can_afford(UnitTypeId.ZEALOT) and gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.ZEALOT))
                 return True
+        return False
+
+    async def shouldBuildForge(self):
+        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
+        return False
+
+
+    async def arleadyHaveForge(self):
+            return self.instance.units(UnitTypeId.FORGE).ready.exists and \
+                not self.instance.already_pending(UnitTypeId.FORGE)
+
+    async def buildForge(self):
+        if self.instance.can_afford(UnitTypeId.FORGE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.FORGE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
+            return True
         return False
 
     async def buildCyberneticsCore(self):
@@ -51,7 +70,7 @@ class Action:
 
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
-            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 4
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
         return False
 
     async def arleadyHaveCyberCore(self):
@@ -59,7 +78,7 @@ class Action:
                not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE)
 
     async def arleadyHaveAllGates(self):
-        return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 4
+        return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 3
 
     async def arleadyHaveEnoughStarGate(self):
         return self.instance.units(UnitTypeId.STARGATE).amount > 3
@@ -111,7 +130,7 @@ class Action:
         return self.instance.can_afford(UnitTypeId.STALKER)
 
     async def haveEnoughStalkers(self):
-        return self.instance.units(UnitTypeId.STALKER).ready.amount > 12
+        return self.instance.units(UnitTypeId.STALKER).amount >= 10
 
     async def haveEnoughZealots(self):
         return self.instance.units(UnitTypeId.ZEALOT).ready.amount > 4
