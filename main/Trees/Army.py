@@ -24,10 +24,21 @@ class Action:
         await self.buildForge()
 
     async def trainZealots(self):
+        if not self.instance.can_afford(UnitTypeId.ZEALOT):
+            return False
         for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
-            if self.instance.can_afford(UnitTypeId.ZEALOT) and gate.noqueue:
+            if gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.ZEALOT))
                 return True
+        return False
+
+    async def shouldTrainZealots(self):
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 4 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
+        # TODO: check for cybernetics core and gateways, then train 3 more
+        # if self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists:
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 7 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
         return False
 
     async def shouldBuildForge(self):
@@ -238,7 +249,8 @@ s2 = Selector(
     ),
     Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
                 Atomic(action.buildCyberneticsCore)), #Build one then
-    Atomic(action.trainZealots), #Train the zealots then
+    Conditional(action.shouldTrainZealots,
+                Atomic(action.trainZealots)),
 )
 
 s1 = DoAllSequence(
@@ -252,6 +264,7 @@ s1 = DoAllSequence(
     ),
     Atomic(s2.run)
 )
+
 
 async def runTree():
     global action
