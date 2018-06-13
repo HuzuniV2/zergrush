@@ -24,7 +24,8 @@ class Action():
     async def gotoGas(self):
         if self.instance.workers.amount >= 16:
             for assimilator in self.instance.units(UnitTypeId.ASSIMILATOR):
-                if assimilator.assigned_harvesters < assimilator.ideal_harvesters:
+                #if assimilator.assigned_harvesters < assimilator.ideal_harvesters:
+                if assimilator.assigned_harvesters < 2:
                     worker = self.instance.workers.closer_than(20, assimilator)
                     if worker.exists:
                         await self.instance.do(worker.random.gather(assimilator))

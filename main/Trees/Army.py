@@ -11,6 +11,7 @@ import Trees.Defense as defense
 
 hasAttacked = False
 
+
 # instance represents the bot itself, so we can tell it to do stuff
 class Action:
     """A way of passing the variables"""
@@ -18,15 +19,40 @@ class Action:
     def __init__(self, inst):
         self.instance = inst
         self.warpgate_started = False
-    async def on_step(self, iteration):
-        await self.trainZealots()
-        await self.buildCyberneticsCore()
 
     async def trainZealots(self):
+        if not self.instance.can_afford(UnitTypeId.ZEALOT):
+            return False
         for gate in self.instance.units(UnitTypeId.GATEWAY).ready:
-            if self.instance.can_afford(UnitTypeId.ZEALOT) and gate.noqueue:
+            if gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.ZEALOT))
                 return True
+        return False
+
+    async def shouldTrainZealots(self):
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 4 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
+        # TODO: check for cybernetics core and gateways, then train 3 more
+        # if self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists:
+        if len(self.instance.units(UnitTypeId.ZEALOT)) < 7 and not self.instance.already_pending(UnitTypeId.ZEALOT):
+            return True
+        return False
+
+    async def shouldBuildForge(self):
+        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
+        return False
+
+    async def arleadyHaveForge(self):
+            return self.instance.units(UnitTypeId.FORGE).ready.exists and \
+                not self.instance.already_pending(UnitTypeId.FORGE)
+
+    async def buildForge(self):
+        if self.instance.can_afford(UnitTypeId.FORGE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.FORGE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
+            return True
         return False
 
     async def buildCyberneticsCore(self):
@@ -51,7 +77,7 @@ class Action:
 
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
-            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 4
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
         return False
 
     async def arleadyHaveCyberCore(self):
@@ -59,7 +85,7 @@ class Action:
                not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE)
 
     async def arleadyHaveAllGates(self):
-        return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 4
+        return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 3
 
     async def arleadyHaveEnoughStarGate(self):
         return self.instance.units(UnitTypeId.STARGATE).amount > 3
@@ -70,15 +96,7 @@ class Action:
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.can_afford(UnitTypeId.GATEWAY):
             await self.instance.build(UnitTypeId.GATEWAY,
-                near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
-            return True
-        return False
-
-    async def buildForge(self):
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if self.instance.can_afford(UnitTypeId.FORGE):
-            await self.instance.build(UnitTypeId.FORGE,
-                near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
             return True
         return False
 
@@ -99,6 +117,7 @@ class Action:
         ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
         await self.instance.do(ccore(AbilityId.RESEARCH_PROTOSSAIRARMOR))
         return True
+
     async def researchAirWeapon(self):
         #abilities = await self.get_available_abilities(ccore)
         if not self.instance.can_afford(AbilityId.RESEARCH_PROTOSSAIRWEAPONS):
@@ -111,7 +130,7 @@ class Action:
         return self.instance.can_afford(UnitTypeId.STALKER)
 
     async def haveEnoughStalkers(self):
-        return self.instance.units(UnitTypeId.STALKER).ready.amount > 12
+        return self.instance.units(UnitTypeId.STALKER).amount >= 10
 
     async def haveEnoughZealots(self):
         return self.instance.units(UnitTypeId.ZEALOT).ready.amount > 4
@@ -133,16 +152,19 @@ class Action:
         return False
 
     async def hasAttackedBase(self):
-        print ("Has Attacked Base ", hasAttacked, "-----")
+        print("Has Attacked Base ", hasAttacked, "-----")
         return hasAttacked
 
     async def rushEnemyBaseWithEverything(self):
         global hasAttacked
         hasAttacked = True
-        attackLocation = self.instance.enemy_start_locations[0]
-        if attackLocation is None:
-            if self.instance.known_enemy_structures.exists:
-                attackLocation = random.choice(self.instance.known_enemy_structures)
+        attackLocation = None
+        if len(self.instance.enemy_start_locations) > 0:
+            attackLocation = self.instance.enemy_start_locations[0]
+        elif self.instance.known_enemy_structures.exists:
+            attackLocation = random.choice(self.instance.known_enemy_structures)
+        else:
+            return False
 
         for stalker in self.instance.units(UnitTypeId.STALKER):
             await self.instance.do(stalker.attack(attackLocation))
@@ -160,13 +182,13 @@ class Action:
         await defense.runTree()
 
 
-
 action = Action(None)
 
 
 def defAction(instance):
     global action
     action.instance = instance
+
 
 #hasMinimumTroops
 s3 = Sequence(
@@ -190,6 +212,7 @@ s3 = Sequence(
         Atomic(action.rushEnemyBaseWithEverything)
     )
 )
+
 
 #TREE
 s2 = Selector(
@@ -219,7 +242,8 @@ s2 = Selector(
     ),
     Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
                 Atomic(action.buildCyberneticsCore)), #Build one then
-    Atomic(action.trainZealots), #Train the zealots then
+    Conditional(action.shouldTrainZealots,
+                Atomic(action.trainZealots)),
 )
 
 s1 = DoAllSequence(
@@ -233,6 +257,7 @@ s1 = DoAllSequence(
     ),
     Atomic(s2.run)
 )
+
 
 async def runTree():
     global action
