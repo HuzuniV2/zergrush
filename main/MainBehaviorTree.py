@@ -11,6 +11,7 @@ import BehaviourTree
 import Trees.Nexus as nexus
 import Trees.Probes as probes
 import Trees.Army as army
+import Trees.Research as res
 import Trees.Defense as defense
 
 from BehaviourTree import *
@@ -22,6 +23,7 @@ from multiprocessing import Process
 s1 = Sequence(
     #Atomic(worker.runTree), #run worker tree -> is not running the next atomic
     Atomic(nexus.runTree),
+    Atomic(res.runTree),
     Atomic(probes.runTree),
     Atomic(army.runTree),
    # Atomic(defense.runTree),
@@ -35,5 +37,6 @@ async def startRunning(self):
     nexus.defAction(self)
     probes.defAction(self)
     army.defAction(self)
+    res.defAction(self)
     #defense.defAction(self)
     await s1.run()

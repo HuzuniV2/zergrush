@@ -220,12 +220,7 @@ s2 = Selector(
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-                    #Conditional(action.hasAttackedBase,
-                    #    ConditionalElse(action.arleadyHaveEnoughStarGate,
-                    #        Atomic(action.trainVR),
-                    #        Atomic(action.buildStarGate)
-                    #    )
-                    #),
+
                     Atomic(s3.run),
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
@@ -233,7 +228,7 @@ s2 = Selector(
                     )
                 )
             ),
-            Atomic(action.buildSeveralGateways)
+            #Atomic(action.buildSeveralGateways)
 
             #Atomic(action.researchAirAmor),
             #Atomic(action.researchAirWeapon)

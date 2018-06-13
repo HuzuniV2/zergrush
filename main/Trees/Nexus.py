@@ -111,6 +111,10 @@ class Action:
     async def haveNoGateway(self):
         return self.instance.units(UnitTypeId.GATEWAY).amount == 0
 
+    async def needMoreGate(self):
+        print ("need more gates = ", self.instance.units(UnitTypeId.GATEWAY).amount < 3)
+        return self.instance.units(UnitTypeId.GATEWAY).amount < 3
+
     async def haveResourcesForGateway(self):
         return self.instance.can_afford(UnitTypeId.GATEWAY)
 
@@ -134,6 +138,10 @@ class Action:
             return True
         return False
 
+    async def arleadyHaveCyberCore(self):
+        return self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists and \
+               not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE)
+
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
@@ -155,7 +163,15 @@ class Action:
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
         return False
 
-
+    async def buildSeveralGateways(self):
+        if self.instance.units(UnitTypeId.GATEWAY).amount > 3:
+            return False
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.can_afford(UnitTypeId.GATEWAY):
+            await self.instance.build(UnitTypeId.GATEWAY,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
+            return True
+        return False
 
     async def canBuildForge(self):
         return self.instance.can_afford(UnitTypeId.FORGE)
@@ -182,9 +198,14 @@ s1 =DoAllSequence(
             Atomic(action.buildPylons)
         )
     ),
-    Conditional(action.haveNoGateway,
-        Conditional(action.haveResourcesForGateway,
-            Atomic(action.buildGateway)
+    ConditionalElse(action.arleadyHaveCyberCore, #If we have a cybercore we need more gateways
+        Conditional(action.needMoreGate,
+                    Atomic(action.buildSeveralGateways)
+        ),
+        Conditional(action.haveNoGateway, #Other wise we only need one
+            Conditional(action.haveResourcesForGateway,
+                Atomic(action.buildGateway)
+            )
         )
     ),
     #Atomic(action.buildGateway),
