@@ -67,13 +67,13 @@ class Action:
         return self.instance.can_afford(UnitTypeId.STARGATE)
 
     async def buildStarGate(self):
-        print ("Build StarGate")
-        if self.instance.can_afford(UnitTypeId.STARGATE):
-            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-            await self.instance.build(UnitTypeId.STARGATE,
-                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
-            return True
-        return False
+        print("Build StarGate")
+        if self.instance.already_pending(UnitTypeId.STARGATE):
+            return False
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        await self.instance.build(UnitTypeId.STARGATE,
+                                  near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
+        return True
 
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
