@@ -240,8 +240,8 @@ s2 = Selector(
             #Atomic(action.doWarpGateResearch)
         ) #Build more gateways
     ),
-    Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
-                Atomic(action.buildCyberneticsCore)), #Build one then
+    #Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
+    #            Atomic(action.buildCyberneticsCore)), #Build one then
     Conditional(action.shouldTrainZealots,
                 Atomic(action.trainZealots)),
 )

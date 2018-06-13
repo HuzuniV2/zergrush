@@ -17,14 +17,6 @@ class Action:
     def __init__(self, inst):
         self.instance = inst
 
-    async def on_step(self, iteration):
-        await self.boost()
-        await self.buildPylons()
-        await self.buildProbes()
-        await self.buildAssimilator()
-        await self.buildGateway()
-        await self.buildExpansion()
-
     async def boost(self):
         prioritize_nexus = self.instance.units(UnitTypeId.PROBE).amount < 15
         for nexus in self.instance.units(UnitTypeId.NEXUS).ready:
@@ -83,12 +75,19 @@ class Action:
                 await self.instance.do(nexus.train(UnitTypeId.PROBE))
         return True
 
+
+    async def lowOnResources(self):
+        return self.instance.supply_left <= 2
+
+    async def canBuildPylons(self):
+        return self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON)
+
     async def buildPylons(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if self.instance.supply_left <= 0:
-            if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
-                await self.instance.build(UnitTypeId.PYLON,
-                                          near=nexus.position.towards(self.instance.game_info.map_center, distance=5))
+        #if self.instance.supply_left <= 2:
+        #if self.instance.can_afford(UnitTypeId.PYLON) and not self.instance.already_pending(UnitTypeId.PYLON):
+        await self.instance.build(UnitTypeId.PYLON,
+            near=nexus.position.towards(self.instance.game_info.map_center, distance=5))
         return True
 
     async def buildAssimilator(self):
@@ -109,6 +108,12 @@ class Action:
                 await self.instance.build(UnitTypeId.NEXUS, near=location, placement_step=1)
                 return True
 
+    async def haveNoGateway(self):
+        return self.instance.units(UnitTypeId.GATEWAY).amount == 0
+
+    async def haveResourcesForGateway(self):
+        return self.instance.can_afford(UnitTypeId.GATEWAY)
+
     async def buildGateway(self):
         await self.build_structure(UnitTypeId.GATEWAY, 16, 1)
 
@@ -120,6 +125,46 @@ class Action:
                     await self.instance.build(unit_type, near=nexus)
         return True
 
+    async def buildStarGate(self):
+        print ("Build StarGate")
+        if self.instance.can_afford(UnitTypeId.STARGATE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.STARGATE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
+            return True
+        return False
+
+    async def shouldBuildCyberneticsCore(self):
+        if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
+        return False
+
+    async def canBuildCyberneticCore(self):
+        return self.instance.can_afford(UnitTypeId.CYBERNETICSCORE)
+
+    async def buildCyberneticsCore(self):
+        if self.instance.can_afford(UnitTypeId.CYBERNETICSCORE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.CYBERNETICSCORE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
+            return True
+        return False
+
+    async def shouldBuildForge(self):
+        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
+        return False
+
+
+
+    async def canBuildForge(self):
+        return self.instance.can_afford(UnitTypeId.FORGE)
+
+    async def buildForge(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        await self.instance.build(UnitTypeId.FORGE,
+            near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
+        return True
 
 action = Action(None)
 
@@ -129,27 +174,33 @@ def defAction(instance):
     action.instance = instance
 
 
-s1 = Sequence(
-    # Selector(
-    #     Atomic(action.has_crono_buff), #we arleady have the boost
-    #     Conditional(action.exists_crono_buff,
-    #         #Atomic(action.otherwise)
-    #         Selector(
-    #             Conditional(action.should_boost,
-    #                 Atomic(action.do_chrono_boost)
-    #             ),
-    #             Atomic(action.otherwise)
-    #         )
-    #     )
-    #     #Atomic(action.boost) #bosts in case we don't arleady havethe boost
-    #     #Atomic(action.has_crono_buff)
-    # ),
+#Initial one
+s1 =DoAllSequence(
     Atomic(action.boost),
-    Atomic(action.buildPylons),
-    Atomic(action.buildGateway),
+    Conditional(action.lowOnResources,
+        Conditional(action.canBuildPylons,
+            Atomic(action.buildPylons)
+        )
+    ),
+    Conditional(action.haveNoGateway,
+        Conditional(action.haveResourcesForGateway,
+            Atomic(action.buildGateway)
+        )
+    ),
+    #Atomic(action.buildGateway),
     Atomic(action.buildProbes),
     Atomic(action.buildAssimilator),
-    Atomic(action.buildExpansion)
+    Atomic(action.buildExpansion),
+    Conditional(action.shouldBuildCyberneticsCore,#Should we have one?
+        Conditional(action.canBuildCyberneticCore,
+            Atomic(action.buildCyberneticsCore)
+        )
+    ),
+    Conditional(action.shouldBuildForge,#Should we have one?
+        Conditional(action.canBuildForge,
+            Atomic(action.buildForge)
+        )
+    ),
 )
 
 
