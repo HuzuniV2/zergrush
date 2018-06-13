@@ -196,9 +196,9 @@ s3 = Sequence(
     Atomic(action.haveEnoughStalkers), #do we have enough stalkers?
     ConditionalElse(action.hasAttackedBase,
         DoAllSequence(
-            ConditionalElse(action.arleadyHaveEnoughStarGate,
+            Conditional(action.arleadyHaveEnoughStarGate,
                 Atomic(action.trainVR),
-                Atomic(action.buildStarGate)
+                #Atomic(action.buildStarGate)
             ),
             ConditionalElse(action.haveEnoughZealots,
                 Atomic(action.doNothing),

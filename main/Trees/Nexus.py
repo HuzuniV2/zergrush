@@ -10,7 +10,7 @@ from BehaviourTree import  *
 import sharedInfo
 #from mainBot import state
 
-
+import Trees.Army as army
 # instance represents the bot itself, so we can tell it to do stuff
 class Action:
     """A way of passing the variables"""
@@ -164,7 +164,7 @@ class Action:
         return False
 
     async def buildSeveralGateways(self):
-        if self.instance.units(UnitTypeId.GATEWAY).amount > 3:
+        if self.instance.units(UnitTypeId.GATEWAY).amount > 4:
             return False
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.can_afford(UnitTypeId.GATEWAY):
@@ -222,6 +222,7 @@ s1 =DoAllSequence(
             Atomic(action.buildForge)
         )
     ),
+    Conditional(army.action.hasAttackedBase,Atomic(action.buildStarGate)),
 )
 
 
