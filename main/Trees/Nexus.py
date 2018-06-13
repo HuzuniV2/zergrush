@@ -93,7 +93,7 @@ class Action:
 
     async def buildAssimilator(self):
         for nexus in self.instance.units(UnitTypeId.NEXUS).ready:
-            gaisers = self.instance.state.vespene_geyser.closer_than(20.0, nexus)
+            gaisers = self.instance.state.vespene_geyser.closer_than(10.0, nexus)
             for gaiser in gaisers:
                 if self.instance.can_afford(UnitTypeId.ASSIMILATOR) and not self.instance.already_pending(UnitTypeId.ASSIMILATOR):
                     builder = self.instance.select_build_worker(gaiser.position)
@@ -106,7 +106,7 @@ class Action:
             if self.instance.units(UnitTypeId.ZEALOT).amount >= 2 and self.instance.can_afford(UnitTypeId.NEXUS):
                 #await self.instance.expand_now()
                 location = await self.instance.get_next_expansion()
-                await self.instance.build(UnitTypeId.NEXUS, near=location)
+                await self.instance.build(UnitTypeId.NEXUS, near=location, placement_step=1)
                 return True
 
     async def buildGateway(self):
