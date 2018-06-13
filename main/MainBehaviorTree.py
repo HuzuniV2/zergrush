@@ -8,8 +8,6 @@ import time
 from threading import Thread
 
 import BehaviourTree
-import Trees.WorkerTreeExample as worker
-import Trees.BuildingsTreeExample as builder
 import Trees.Nexus as nexus
 import Trees.Probes as probes
 import Trees.Army as army
@@ -22,7 +20,7 @@ from multiprocessing import Process
 
 #Add your tree here
 s1 = Sequence(
-    Atomic(worker.runTree), #run worker tree -> is not running the next atomic
+    #Atomic(worker.runTree), #run worker tree -> is not running the next atomic
     Atomic(nexus.runTree),
     Atomic(probes.runTree),
     Atomic(army.runTree),
@@ -34,7 +32,6 @@ s1 = Sequence(
 async def startRunning(self):
     # print ("Start running")
     # sharedInfo.setState(self)
-    worker.defAction(self)
     nexus.defAction(self)
     probes.defAction(self)
     army.defAction(self)

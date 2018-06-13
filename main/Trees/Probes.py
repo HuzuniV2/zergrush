@@ -38,6 +38,15 @@ class Action():
                 if worker.exists and worker.idle:
                     await self.instance.do(worker.random.gather(mfield))
         return True
+
+    async def gather_supplies(self):
+        """make idols Gathers supplies """
+        for worker in self.instance.workers.idle: #better possibility
+        #for worker in self.instance.workers:
+            mf = self.instance.state.mineral_field.closest_to(worker)
+            await self.instance.do(worker.gather(mf))
+        return True
+
 action = Action(None)
 
 
@@ -46,6 +55,7 @@ def defAction(instance):
     action.instance = instance
 
 s1 = Sequence(
+    Atomic(action.gather_supplies), #Default first one
     Atomic(action.gotoGas),
     Atomic(action.gotoMField)
 )

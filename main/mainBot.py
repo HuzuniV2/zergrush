@@ -7,8 +7,6 @@ import random
 import time
 from threading import Thread
 
-import BehaviourTree
-import Trees.WorkerTreeExample
 
 from BehaviourTree import *
 
