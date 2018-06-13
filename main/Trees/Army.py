@@ -196,9 +196,9 @@ s3 = Sequence(
     Atomic(action.haveEnoughStalkers), #do we have enough stalkers?
     ConditionalElse(action.hasAttackedBase,
         DoAllSequence(
-            ConditionalElse(action.arleadyHaveEnoughStarGate,
+            Conditional(action.arleadyHaveEnoughStarGate,
                 Atomic(action.trainVR),
-                Atomic(action.buildStarGate)
+                #Atomic(action.buildStarGate)
             ),
             ConditionalElse(action.haveEnoughZealots,
                 Atomic(action.doNothing),
@@ -220,12 +220,7 @@ s2 = Selector(
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-                    #Conditional(action.hasAttackedBase,
-                    #    ConditionalElse(action.arleadyHaveEnoughStarGate,
-                    #        Atomic(action.trainVR),
-                    #        Atomic(action.buildStarGate)
-                    #    )
-                    #),
+
                     Atomic(s3.run),
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
@@ -233,15 +228,15 @@ s2 = Selector(
                     )
                 )
             ),
-            Atomic(action.buildSeveralGateways)
+            #Atomic(action.buildSeveralGateways)
 
             #Atomic(action.researchAirAmor),
             #Atomic(action.researchAirWeapon)
             #Atomic(action.doWarpGateResearch)
         ) #Build more gateways
     ),
-    Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
-                Atomic(action.buildCyberneticsCore)), #Build one then
+    #Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
+    #            Atomic(action.buildCyberneticsCore)), #Build one then
     Conditional(action.shouldTrainZealots,
                 Atomic(action.trainZealots)),
 )
