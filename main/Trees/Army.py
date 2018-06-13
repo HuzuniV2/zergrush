@@ -7,7 +7,9 @@ from sc2.player import Bot, Computer
 
 import BehaviourTree
 from BehaviourTree import *
+import Trees.Defense as defense
 
+hasAttacked = False
 
 # instance represents the bot itself, so we can tell it to do stuff
 class Action:
@@ -54,6 +56,18 @@ class Action:
             return True
         return False
 
+    async def canAffordStarGate(self):
+        return self.instance.can_afford(UnitTypeId.STARGATE)
+
+    async def buildStarGate(self):
+        print ("Build StarGate")
+        if self.instance.can_afford(UnitTypeId.STARGATE):
+            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+            await self.instance.build(UnitTypeId.STARGATE,
+                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
+            return True
+        return False
+
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
             return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
@@ -66,12 +80,23 @@ class Action:
     async def arleadyHaveAllGates(self):
         return self.instance.units(UnitTypeId.GATEWAY).ready.amount >= 3
 
+    async def arleadyHaveEnoughStarGate(self):
+        return self.instance.units(UnitTypeId.STARGATE).amount > 3
+
     async def buildSeveralGateways(self):
         if self.instance.units(UnitTypeId.GATEWAY).amount > 3:
             return False
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         if self.instance.can_afford(UnitTypeId.GATEWAY):
             await self.instance.build(UnitTypeId.GATEWAY,
+                near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
+            return True
+        return False
+
+    async def buildForge(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        if self.instance.can_afford(UnitTypeId.FORGE):
+            await self.instance.build(UnitTypeId.FORGE,
                 near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
             return True
         return False
@@ -105,7 +130,10 @@ class Action:
         return self.instance.can_afford(UnitTypeId.STALKER)
 
     async def haveEnoughStalkers(self):
-        return self.instance.units(UnitTypeId.STALKER).amount >= 10
+        return self.instance.units(UnitTypeId.STALKER).ready.amount > 12
+
+    async def haveEnoughZealots(self):
+        return self.instance.units(UnitTypeId.ZEALOT).ready.amount > 4
 
     async def trainStalkers(self):
         print ("Train Stalkers")
@@ -123,17 +151,33 @@ class Action:
                 return True
         return False
 
+    async def hasAttackedBase(self):
+        print ("Has Attacked Base ", hasAttacked, "-----")
+        return hasAttacked
+
     async def rushEnemyBaseWithEverything(self):
+        global hasAttacked
+        hasAttacked = True
+        attackLocation = self.instance.enemy_start_locations[0]
+        if attackLocation is None:
+            if self.instance.known_enemy_structures.exists:
+                attackLocation = random.choice(self.instance.known_enemy_structures)
+
         for stalker in self.instance.units(UnitTypeId.STALKER):
-            await self.instance.do(stalker.attack(self.instance.enemy_start_locations[0]))
+            await self.instance.do(stalker.attack(attackLocation))
         for zealot in self.instance.units(UnitTypeId.ZEALOT):
-            await self.instance.do(zealot.attack(self.instance.enemy_start_locations[0]))
+            await self.instance.do(zealot.attack(attackLocation))
         for vr in self.instance.units(UnitTypeId.VOIDRAY):
-            await self.instance.do(vr.attack(self.instance.enemy_start_locations[0]))
+            await self.instance.do(vr.attack(attackLocation))
         return True
 
     async def doNothing(self):
         return True
+
+    async def applyDefenseTree(self):
+        defense.defAction(self.instance)
+        await defense.runTree()
+
 
 
 action = Action(None)
@@ -143,14 +187,42 @@ def defAction(instance):
     global action
     action.instance = instance
 
+#hasMinimumTroops
+s3 = Sequence(
+    Atomic(action.haveEnoughZealots), #do we have enough zealots?
+    Atomic(action.haveEnoughStalkers), #do we have enough stalkers?
+    ConditionalElse(action.hasAttackedBase,
+        DoAllSequence(
+            ConditionalElse(action.arleadyHaveEnoughStarGate,
+                Atomic(action.trainVR),
+                Atomic(action.buildStarGate)
+            ),
+            ConditionalElse(action.haveEnoughZealots,
+                Atomic(action.doNothing),
+                Atomic(action.trainZealots)
+            ),
+            ConditionalElse(action.haveEnoughStalkers,
+                Atomic(action.doNothing),
+                Atomic(action.trainStalkers)
+            )
+        ),
+        Atomic(action.rushEnemyBaseWithEverything)
+    )
+)
 
 #TREE
-s1 = Selector(
+s2 = Selector(
     Conditional(action.arleadyHaveCyberCore, #Do we arleady have one?
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-                    Conditional(action.haveEnoughStalkers,Atomic(action.rushEnemyBaseWithEverything)), #stop if we arleady have enough stalkers
+                    #Conditional(action.hasAttackedBase,
+                    #    ConditionalElse(action.arleadyHaveEnoughStarGate,
+                    #        Atomic(action.trainVR),
+                    #        Atomic(action.buildStarGate)
+                    #    )
+                    #),
+                    Atomic(s3.run),
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
                         Atomic(action.doNothing) #Save resources for later
@@ -169,6 +241,17 @@ s1 = Selector(
     Atomic(action.trainZealots), #Train the zealots then
 )
 
+s1 = DoAllSequence(
+    Selector(
+        #Atomic(s3.run),
+        #Atomic(action.applyDefenseTree)
+        ConditionalElse(action.haveEnoughStalkers, #do we have to attack? TODO -> needs to be swithced with something a bit more complex
+           Atomic(action.rushEnemyBaseWithEverything), # TODO -> change for the attacker version MAYBE THE CONDITION AND THE ATTACK TREE SHOULD BE IN THE SAME PLACE
+           Atomic(action.applyDefenseTree)
+        )
+    ),
+    Atomic(s2.run)
+)
 
 async def runTree():
     global action
