@@ -38,6 +38,19 @@ class Action:
             return True
         return False
 
+    async def haveGateway(self):
+        return self.instance.units(UnitTypeId.GATEWAY).ready.amount > 0
+
+    async def haveStarGate(self):
+        return self.instance.units(UnitTypeId.STARGATE).ready.amount > 0
+
+    async def shouldTrainStalkers(self):
+        if self.instance.units(UnitTypeId.STALKER).ready.amount < 13:
+            return True
+        # TODO: check for cybernetics core and gateways, then train 3 more
+        # if self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.exists:
+        return False
+
     async def buildCyberneticsCore(self):
         if self.instance.can_afford(UnitTypeId.CYBERNETICSCORE):
             nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
@@ -105,7 +118,6 @@ class Action:
         return False
 
     async def trainVR(self):
-        print("Train vr")
         for gate in self.instance.units(UnitTypeId.STARGATE):
             if self.instance.can_afford(UnitTypeId.VOIDRAY) and gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.VOIDRAY))
@@ -166,48 +178,72 @@ def defAction(instance):
 
 #hasMinimumTroops
 s3 = Sequence(
+    Atomic(action.arleadyHaveAllGates),
     Atomic(action.haveEnoughZealots), #do we have enough zealots?
     Atomic(action.haveEnoughStalkers), #do we have enough stalkers?
-    ConditionalElse(action.hasAttackedBase,
-        DoAllSequence(
-            OptionalConditional(action.arleadyHaveEnoughStarGate,
-                Atomic(action.trainVR),
-            ),
-            ConditionalElse(action.haveEnoughZealots,
-                Atomic(action.doNothing),
-                Atomic(action.trainZealots)
-            ),
-            ConditionalElse(action.haveEnoughStalkers,
-                Atomic(action.doNothing),
-                Atomic(action.trainStalkers)
-            )
-        ),
-        Atomic(action.rushEnemyBaseWithEverything)
-    )
+    #ConditionalElse(action.hasAttackedBase,
+    #    DoAllSequence(
+    #        OptionalConditional(action.arleadyHaveEnoughStarGate,
+    #            Atomic(action.trainVR),
+    #        ),
+    #        ConditionalElse(action.haveEnoughZealots,
+    #            Atomic(action.doNothing),
+    #            Atomic(action.trainZealots)
+    #        ),
+    #        ConditionalElse(action.haveEnoughStalkers,
+    #            Atomic(action.doNothing),
+    #            Atomic(action.trainStalkers)
+    #        )
+    #    ),
+    #    Atomic(action.rushEnemyBaseWithEverything)
+    #)
+    Atomic(action.rushEnemyBaseWithEverything)
 )
 
 
 #TREE
-s2 = Selector(
-    Conditional(action.arleadyHaveCyberCore, #Do we arleady have one?
-        Selector(
-            Conditional(action.arleadyHaveAllGates,
-                Selector(
-                    Atomic(s3.run),
-                    ConditionalElse(action.haveResourcesForStalker,
-                        Atomic(action.trainStalkers), #Train stalkers
-                        Atomic(action.doNothing) #Save resources for later
-                    )
-                )
-            ),
-
-            #Atomic(action.researchAirAmor),
-            #Atomic(action.researchAirWeapon)
-            #Atomic(action.doWarpGateResearch)
-        ) #Build more gateways
+s2 = DoAllSequence(
+    Atomic(s3.run),
+    Sequence(
+        Atomic(action.haveGateway),#check if we have a gateway
+        OptionalConditional(action.shouldTrainZealots,
+            Atomic(action.trainZealots)
+        ),
+        OptionalConditional(action.shouldTrainStalkers,
+            Conditional(action.haveResourcesForStalker,
+                Atomic(action.trainStalkers), #Train stalkers
+            )
+        )
     ),
-    Conditional(action.shouldTrainZealots,
-                Atomic(action.trainZealots)),
+    Sequence(
+        Atomic(action.haveStarGate),
+        Atomic(action.trainVR)
+    ),
+    Sequence(
+        Atomic(action.shouldTrainObserver),
+        Conditional(action.canTrainObserver,
+            Atomic(action.trainObserver),
+        ),
+    ),
+    #Conditional(action.arleadyHaveCyberCore, #Do we arleady have one?
+    #   Selector(
+    #       Conditional(action.arleadyHaveAllGates,
+    #            Selector(
+    #                Atomic(s3.run),
+    #                ConditionalElse(action.haveResourcesForStalker,
+    #                    Atomic(action.trainStalkers), #Train stalkers
+    #                    Atomic(action.doNothing) #Save resources for later
+    #                )
+    #            )
+    #        ),
+#
+#            #Atomic(action.researchAirAmor),
+#            #Atomic(action.researchAirWeapon)
+#            #Atomic(action.doWarpGateResearch)
+#        ) #Build more gateways
+#    ),
+#    Conditional(action.shouldTrainZealots,
+#                Atomic(action.trainZealots)),
 )
 
 s1 = DoAllSequence(

@@ -112,8 +112,7 @@ class Action:
         return self.instance.units(UnitTypeId.GATEWAY).amount == 0
 
     async def needMoreGate(self):
-        print ("need more gates = ", self.instance.units(UnitTypeId.GATEWAY).amount < 3)
-        return self.instance.units(UnitTypeId.GATEWAY).amount < 3
+        return self.instance.units(UnitTypeId.GATEWAY).amount + self.instance.already_pending(UnitTypeId.GATEWAY)< 4
 
     async def haveResourcesForGateway(self):
         return self.instance.can_afford(UnitTypeId.GATEWAY)
