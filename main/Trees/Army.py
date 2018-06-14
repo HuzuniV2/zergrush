@@ -38,23 +38,6 @@ class Action:
             return True
         return False
 
-    async def shouldBuildForge(self):
-        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
-            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
-        return False
-
-    async def arleadyHaveForge(self):
-            return self.instance.units(UnitTypeId.FORGE).ready.exists and \
-                not self.instance.already_pending(UnitTypeId.FORGE)
-
-    async def buildForge(self):
-        if self.instance.can_afford(UnitTypeId.FORGE):
-            nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-            await self.instance.build(UnitTypeId.FORGE,
-                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
-            return True
-        return False
-
     async def buildCyberneticsCore(self):
         if self.instance.can_afford(UnitTypeId.CYBERNETICSCORE):
             nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
@@ -62,18 +45,6 @@ class Action:
                                       near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
             return True
         return False
-
-    async def canAffordStarGate(self):
-        return self.instance.can_afford(UnitTypeId.STARGATE)
-
-    async def buildStarGate(self):
-        print("Build StarGate")
-        if self.instance.already_pending(UnitTypeId.STARGATE):
-            return False
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        await self.instance.build(UnitTypeId.STARGATE,
-                                  near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
-        return True
 
     async def shouldBuildCyberneticsCore(self):
         if not self.instance.units(UnitTypeId.CYBERNETICSCORE).exists and not self.instance.already_pending(UnitTypeId.CYBERNETICSCORE):
@@ -90,16 +61,6 @@ class Action:
     async def arleadyHaveEnoughStarGate(self):
         return self.instance.units(UnitTypeId.STARGATE).amount > 3
 
-    async def buildSeveralGateways(self):
-        if self.instance.units(UnitTypeId.GATEWAY).amount > 3:
-            return False
-        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
-        if self.instance.can_afford(UnitTypeId.GATEWAY):
-            await self.instance.build(UnitTypeId.GATEWAY,
-                                      near=nexus.position.towards(self.instance.game_info.map_center, distance=20))
-            return True
-        return False
-
     async def doWarpGateResearch(self):
         #abilities = await self.get_available_abilities(ccore)
         if not self.instance.can_afford(AbilityId.RESEARCH_WARPGATE) and self.instance.warpgate_started:
@@ -111,7 +72,7 @@ class Action:
 
     async def researchAirAmor(self):
         #abilities = await self.get_available_abilities(ccore)
-        print ("Research started!!!!!!!!!")
+        print("Research started!!!!!!!!!")
         if not self.instance.can_afford(AbilityId.RESEARCH_PROTOSSAIRARMOR):
             return False
         ccore = self.instance.units(UnitTypeId.CYBERNETICSCORE).ready.first
@@ -136,7 +97,7 @@ class Action:
         return self.instance.units(UnitTypeId.ZEALOT).ready.amount > 4
 
     async def trainStalkers(self):
-        print ("Train Stalkers")
+        print("Train Stalkers")
         for gate in self.instance.units(UnitTypeId.GATEWAY):
             if self.instance.can_afford(UnitTypeId.STALKER) and gate.noqueue:
                 await self.instance.do(gate.train(UnitTypeId.STALKER))
@@ -152,7 +113,7 @@ class Action:
         return False
 
     async def hasAttackedBase(self):
-        print("Has Attacked Base ", hasAttacked, "-----")
+        # print("Has Attacked Base ", hasAttacked, "-----")
         return hasAttacked
 
     async def rushEnemyBaseWithEverything(self):
@@ -181,6 +142,19 @@ class Action:
         defense.defAction(self.instance)
         await defense.runTree()
 
+    async def shouldTrainObserver(self):
+        return self.instance.units(UnitTypeId.ROBOTICSFACILITY).ready.exists and not self.instance.already_pending(UnitTypeId.OBSERVER)
+
+    async def canTrainObserver(self):
+        return self.instance.can_afford(UnitTypeId.OBSERVER)
+
+    async def trainObserver(self):
+        robotics = self.instance.units(UnitTypeId.ROBOTICSFACILITY).ready
+        if robotics.exists:
+            await self.instance.do(robotics.first.train(UnitTypeId.OBSERVER))
+            return True
+        return False
+
 
 action = Action(None)
 
@@ -196,9 +170,8 @@ s3 = Sequence(
     Atomic(action.haveEnoughStalkers), #do we have enough stalkers?
     ConditionalElse(action.hasAttackedBase,
         DoAllSequence(
-            Conditional(action.arleadyHaveEnoughStarGate,
+            OptionalConditional(action.arleadyHaveEnoughStarGate,
                 Atomic(action.trainVR),
-                #Atomic(action.buildStarGate)
             ),
             ConditionalElse(action.haveEnoughZealots,
                 Atomic(action.doNothing),
@@ -220,7 +193,6 @@ s2 = Selector(
         Selector(
             Conditional(action.arleadyHaveAllGates,
                 Selector(
-
                     Atomic(s3.run),
                     ConditionalElse(action.haveResourcesForStalker,
                         Atomic(action.trainStalkers), #Train stalkers
@@ -228,15 +200,12 @@ s2 = Selector(
                     )
                 )
             ),
-            #Atomic(action.buildSeveralGateways)
 
             #Atomic(action.researchAirAmor),
             #Atomic(action.researchAirWeapon)
             #Atomic(action.doWarpGateResearch)
         ) #Build more gateways
     ),
-    #Conditional(action.shouldBuildCyberneticsCore, #Should we have one?
-    #            Atomic(action.buildCyberneticsCore)), #Build one then
     Conditional(action.shouldTrainZealots,
                 Atomic(action.trainZealots)),
 )
@@ -246,11 +215,18 @@ s1 = DoAllSequence(
         #Atomic(s3.run),
         #Atomic(action.applyDefenseTree)
         ConditionalElse(action.haveEnoughStalkers, #do we have to attack? TODO -> needs to be swithced with something a bit more complex
-           Atomic(action.rushEnemyBaseWithEverything), # TODO -> change for the attacker version MAYBE THE CONDITION AND THE ATTACK TREE SHOULD BE IN THE SAME PLACE
-           Atomic(action.applyDefenseTree)
-        )
+            Sequence(
+                OptionalConditional(action.shouldTrainObserver,
+                    OptionalConditional(action.canTrainObserver,
+                        Atomic(action.trainObserver),
+                    ),
+                ),
+                Atomic(action.rushEnemyBaseWithEverything), # TODO -> change for the attacker version MAYBE THE CONDITION AND THE ATTACK TREE SHOULD BE IN THE SAME PLACE
+            ),
+            Atomic(action.applyDefenseTree),
+        ),
     ),
-    Atomic(s2.run)
+    Atomic(s2.run),
 )
 
 
