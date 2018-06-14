@@ -112,8 +112,7 @@ class Action:
         return self.instance.units(UnitTypeId.GATEWAY).amount == 0
 
     async def needMoreGate(self):
-        print ("need more gates = ", self.instance.units(UnitTypeId.GATEWAY).amount < 3)
-        return self.instance.units(UnitTypeId.GATEWAY).amount < 3
+        return self.instance.units(UnitTypeId.GATEWAY).amount + self.instance.already_pending(UnitTypeId.GATEWAY)< 4
 
     async def haveResourcesForGateway(self):
         return self.instance.can_afford(UnitTypeId.GATEWAY)
@@ -129,9 +128,12 @@ class Action:
                     await self.instance.build(unit_type, near=nexus)
         return True
 
+    async def shouldBuildStarGate(self):
+        return self.instance.units(UnitTypeId.STARGATE).ready.amount + self.instance.already_pending(UnitTypeId.STARGATE) < 3
+
     async def buildStarGate(self):
-        print ("Build StarGate")
         if self.instance.can_afford(UnitTypeId.STARGATE):
+            print("Build StarGate")
             nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
             await self.instance.build(UnitTypeId.STARGATE,
                                       near=nexus.position.towards(self.instance.game_info.map_center, distance=25))
@@ -158,11 +160,6 @@ class Action:
             return True
         return False
 
-    async def shouldBuildForge(self):
-        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
-            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
-        return False
-
     async def buildSeveralGateways(self):
         if self.instance.units(UnitTypeId.GATEWAY).amount > 4:
             return False
@@ -173,14 +170,34 @@ class Action:
             return True
         return False
 
+    async def shouldBuildForge(self):
+        if not self.instance.units(UnitTypeId.FORGE).exists and not self.instance.already_pending(UnitTypeId.FORGE):
+            return len(self.instance.units(UnitTypeId.ZEALOT)) >= 3
+        return False
+
     async def canBuildForge(self):
         return self.instance.can_afford(UnitTypeId.FORGE)
 
     async def buildForge(self):
         nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
         await self.instance.build(UnitTypeId.FORGE,
-            near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
+                                  near=nexus.position.towards(self.instance.game_info.map_center, distance=10))
         return True
+
+    async def shouldBuildRoboticsFacility(self):
+        if self.instance.units(UnitTypeId.ROBOTICSFACILITY).exists or self.instance.already_pending(UnitTypeId.ROBOTICSFACILITY):
+            return False
+        return self.instance.units(UnitTypeId.STARGATE).exists or self.instance.already_pending(UnitTypeId.STARGATE)
+
+    async def canBuildRoboticsFacility(self):
+        return self.instance.can_afford(UnitTypeId.ROBOTICSFACILITY)
+
+    async def buildRoboticsFacility(self):
+        nexus = self.instance.units(UnitTypeId.NEXUS).ready.random
+        await self.instance.build(UnitTypeId.ROBOTICSFACILITY,
+                                  near=nexus.position.towards(self.instance.game_info.map_center, distance=15))
+        return True
+
 
 action = Action(None)
 
@@ -214,15 +231,24 @@ s1 =DoAllSequence(
     Atomic(action.buildExpansion),
     Conditional(action.shouldBuildCyberneticsCore,#Should we have one?
         Conditional(action.canBuildCyberneticCore,
-            Atomic(action.buildCyberneticsCore)
-        )
+            Atomic(action.buildCyberneticsCore),
+        ),
     ),
-    Conditional(action.shouldBuildForge,#Should we have one?
-        Conditional(action.canBuildForge,
-            Atomic(action.buildForge)
-        )
+    # Conditional(action.shouldBuildForge,#Should we have one?
+    #     Conditional(action.canBuildForge,
+    #         Atomic(action.buildForge),
+    #     ),
+    # ),
+    Conditional(army.action.hasAttackedBase,
+        Conditional(action.shouldBuildStarGate,
+            Atomic(action.buildStarGate)
+        ),
     ),
-    Conditional(army.action.hasAttackedBase,Atomic(action.buildStarGate)),
+    Conditional(action.shouldBuildRoboticsFacility,  #Should we have one?
+        Conditional(action.canBuildRoboticsFacility,
+            Atomic(action.buildRoboticsFacility)
+        ),
+    ),
 )
 
 
