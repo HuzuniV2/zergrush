@@ -145,6 +145,8 @@ class Action:
             await self.instance.do(zealot.attack(attackLocation))
         for vr in self.instance.units(UnitTypeId.VOIDRAY):
             await self.instance.do(vr.attack(attackLocation))
+        for vr in self.instance.units(UnitTypeId.OBSERVER):
+            await self.instance.do(vr.attack(attackLocation))
         return True
 
     async def doNothing(self):
@@ -155,7 +157,9 @@ class Action:
         await defense.runTree()
 
     async def shouldTrainObserver(self):
-        return self.instance.units(UnitTypeId.ROBOTICSFACILITY).ready.exists and not self.instance.already_pending(UnitTypeId.OBSERVER)
+        return self.instance.units(UnitTypeId.ROBOTICSFACILITY).ready.exists and\
+            not self.instance.already_pending(UnitTypeId.OBSERVER) and\
+            not self.instance.units(UnitTypeId.OBSERVER).ready.exists
 
     async def canTrainObserver(self):
         return self.instance.can_afford(UnitTypeId.OBSERVER)
