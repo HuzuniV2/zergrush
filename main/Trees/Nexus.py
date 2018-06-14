@@ -235,11 +235,11 @@ s1 =DoAllSequence(
             Atomic(action.buildCyberneticsCore),
         ),
     ),
-    Conditional(action.shouldBuildForge,#Should we have one?
-        Conditional(action.canBuildForge,
-            Atomic(action.buildForge),
-        ),
-    ),
+    # Conditional(action.shouldBuildForge,#Should we have one?
+    #     Conditional(action.canBuildForge,
+    #         Atomic(action.buildForge),
+    #     ),
+    # ),
     Conditional(army.action.hasAttackedBase,
         Conditional(action.shouldBuildStarGate,
             Atomic(action.buildStarGate)
